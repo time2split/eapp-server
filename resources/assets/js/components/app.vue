@@ -26,7 +26,7 @@
             </div>
         </nav>
         <div  v-if="relationTypes">
-            <component v-bind:is="component" :config="config" :relationTypes="showRelations" :word="word"></component>
+            <component v-bind:is="component" :config="config" :relationTypes="showRelations" :word="word" :words="words"></component>
         </div>
     </div>
 
@@ -45,7 +45,7 @@
             urlword: null
         },
         data() {
-            return HUB.$data;
+            return HUB.$data.shared;
         },
         computed: {
             showRelations: function () {
@@ -60,11 +60,11 @@
         },
         created: function ()
         {
-            axios.get('/@get/relationTypes').then((response) => {
+            HUB.addHttpRequest('/@get/relationTypes',(response) => {
                 this.relationTypes = response.data;
             });
 
-            axios.get('/@get/relationTypes?get=excluded').then((response) => {
+            HUB.addHttpRequest('/@get/relationTypes?get=excluded',(response) => {
                 this.config.relations.excluded = response.data;
             });
 
@@ -74,12 +74,9 @@
             if (this.word != null)
                 this.loadComponent('show-word');
 
-            this.$watch('word', this.changeWord)
+            this.$watch('word', this.loadWordPage)
         },
         methods: {
-            changeWord(word) {
-//                HUB.changeWord(word);
-            },
             loadComponent: function (component, e)
             {
                 if (component == this.component)

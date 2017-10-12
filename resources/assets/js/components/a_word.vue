@@ -26,7 +26,7 @@
             }
         },
         created: function () {
-            this.$emit('askForWord', this.relation.n2);
+            HUB.askForWord(this.relation.n2);
         },
         methods: {
             changeWord(word, e)

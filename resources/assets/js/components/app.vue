@@ -26,7 +26,7 @@
             </div>
         </nav>
         <div  v-if="relationTypes">
-            <component v-bind:is="component" :config="config" :relationTypes="showRelations" :word="word" :words="words"></component>
+            <component v-bind:is="component" :config="config" :relationTypes="showRelations" :wordsData="wordsData" :word="word" :words="words"></component>
         </div>
     </div>
 

@@ -1,9 +1,10 @@
 <script>
     const shared = {
-        word: null,
-        words: {},
-        relationTypes: null,
-        component: "show-welcome",
+        word: null, // Le mot en cours (chaine)
+        words: {}, //Des mots à rechercher si besoin
+        relationTypes: null, //Les types de relations (toute la base de données)
+        component: "show-welcome", //Le composant principal utilisé
+        wordsData: {}, //Infos à stocker sur un mot (relations ...)
         config: {
             show_word: {
                 per_page: 2000,
@@ -32,24 +33,41 @@
             this.$watch('wordQ', this.getAWord);
         },
         methods: {
+            //==================================================================
+            //HISTORIQUE
+            //==================================================================
             popstate(e) {
 
                 if (e.state) {
                     shared.word = e.state.word;
                 }
             },
+
+            //==================================================================
+            //SHARED
+            //==================================================================
+            //
+            set(k, v)
+            {
+                this[k] = v;
+            },
+            $set(target, k, v) {
+                Vue.prototype.$set(target, k, v);
+            },
+            //==================================================================
+            addHttpRequest(page, callThen, callCatch = null)
+            {
+                axios.get(page).then(callThen).catch(callCatch);
+            },
+            //==================================================================
             changeWord(word) {
 
                 if (shared.word == word)
                     return;
-                
+
                 shared.word = word;
                 var data = this.$data.shared;
-                history.pushState(data, this.word, encodeURI("/" + this.word));
-            },
-            addHttpRequest(page, callThen, callCatch = null)
-            {
-                axios.get(page).then(callThen).catch(callCatch);
+                history.pushState(data, shared.word, encodeURI("/" + shared.word));
             },
             askForWord: function (wid)
             {

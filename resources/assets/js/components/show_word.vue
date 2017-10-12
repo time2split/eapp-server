@@ -23,9 +23,8 @@
 </template>
 <script>
     import { HUB } from '../vue/data.js';
-    
     export default{
-        props: ['word', 'relationTypes', 'config', 'words'],
+        props: ['word', 'relationTypes', 'config', 'words', 'wordsData'],
         components: {
             'show-word-relation': require('./show_word_relation.vue')
         },
@@ -53,7 +52,7 @@
             fillRelations: function (page = 1) {
                 var url = '/word/' + this.word + '/childs?per_page=100&page=' + page;
 
-                HUB.addHttpRequest(url,(response) => {
+                HUB.addHttpRequest(url, (response) => {
                     this.cancelToken = null;
                     var rels = response.data.data;
 
@@ -62,7 +61,12 @@
                     else {
 
                         if (page < this.config.show_word.max_page)
-                            this.fillRelations(page + 1);
+                        {
+                            if(page > -1)
+                                page++;
+                            
+                            this.fillRelations(page);
+                        }
 
                         var ret = this.relations;
 
@@ -78,12 +82,24 @@
                 });
             },
             changeTheWord: function () {
-                HUB.addHttpRequest('/word/' + this.word,(response) => {
-                    this.wdata = response.data.word;
-                });
-                this.wdata = null;
-                this.initRelations();
-                this.fillRelations();
+
+//                if (this.wordsData[this.word])
+//                {
+//                    var data = JSON.parse(this.wordsData[this.word]);
+//                    this.relations = data.relations;
+//                    this.wdata = data.wdata;
+//                    console.log(data);
+//                } else
+                {
+                    HUB.addHttpRequest('/word/' + this.word, (response) => {
+                        this.wdata = response.data.word;
+                        HUB.$set(this.wordsData, this.word, JSON.stringify(this.$data));
+                        console.log(this.wordsData);
+                    });
+                    this.wdata = null;
+                    this.initRelations();
+                    this.fillRelations();
+                }
             }
         }
     };

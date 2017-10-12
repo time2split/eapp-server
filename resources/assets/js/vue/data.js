@@ -1,0 +1,1 @@
+export const HUB = new Vue(require('../components/hub.vue'));

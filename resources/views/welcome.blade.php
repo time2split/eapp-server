@@ -8,7 +8,7 @@
     </head>
     <body>
         <div id="app">
-            <my-app urlword="{{ $word }}"></my-app>
+            <my-app urlword="{{ $word }}" urlwordrelation="{{ $word_relation }}"></my-app>
         </div>
         <script src="/js/app.js" >
         </script>

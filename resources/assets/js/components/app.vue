@@ -8,25 +8,25 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="nav navbar-nav mr-auto">
                     <li>
-                        <a class="nav-link" @click="loadComponent('show-welcome')">Accueil</a>
+                        <a class="nav-link" href="#" @click="loadComponent('show-welcome')">Accueil</a>
                     </li>
                     <li v-if="word" class="nav-item">
-                        <a class="nav-link" @click="loadComponent('show-word')">"{{ word }}"</a>
+                        <a class="nav-link" href="#" @click="loadComponent('show-word')">"{{ word }}"</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" @click="loadComponent('show-relations')">Relations</a>
+                        <a class="nav-link" href="#" @click="loadComponent('show-relations')">Relations</a>
                     </li>
                 </ul>
             </div>
 
             <div class="container-fluid">
                 <div class="row">
-                    <nav-search @submit="changeWord" url="/word/$/autocomplete"></nav-search>
+                    <nav-search @submit="changeWord" url="/@word/$/autocomplete"></nav-search>
                 </div>
             </div>
         </nav>
         <div  v-if="relationTypes">
-            <component v-bind:is="component" :config="config" :relationTypes="showRelations" :wordsData="wordsData" :word="word" :words="words"></component>
+            <component v-bind:is="component" :config="config" :userConfig="userConfig" :showRelations="showRelations" :relationTypes="relationTypes" :wordsData="wordsData" :word="word" :relation="relation" :words="words"></component>
         </div>
     </div>
 
@@ -42,18 +42,23 @@
             'show-relations': require('./show_relations.vue')
         },
         props: {
-            urlword: null
+            urlword: null,
+            urlwordrelation : null
         },
         data() {
             return HUB.$data.shared;
         },
         computed: {
-            showRelations: function () {
+            showRelations () {
                 var ret = [];
+                var ids = this.config.relations.exclude.map((rel) => rel._id)
+                
                 for (var rel of this.relationTypes)
                 {
-                    if (this.config.relations.exclude.indexOf(rel._id) == -1)
+                    if (ids.indexOf(rel._id) == -1)
                         ret.push(rel);
+//                    else
+//                        console.log(rel.name)
                 }
                 return ret;
             }
@@ -65,8 +70,11 @@
             });
 
             HUB.addHttpRequest('/@get/relationTypes?get=excluded',(response) => {
-                this.config.relations.excluded = response.data;
+                this.config.relations.exclude = response.data;
             });
+
+            if (this.urlwordrelation != '')
+                this.relation = this.urlwordrelation;
 
             if (this.urlword != '')
                 this.word = this.urlword;

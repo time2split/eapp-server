@@ -22,9 +22,9 @@ class Word extends Controller
         $this->relPagination  = config( 'app.pagination.relations', config( 'app.pagination.default', 20 ) );
     }
 
-    public function app( string $word = null )
+    public function app( string $word = null, string $relation = null )
     {
-        return view( 'welcome', ['word' => $word] );
+        return view( 'welcome', ['word' => $word, 'word_relation' => $relation] );
     }
 
     private function getWord( string $word )
@@ -62,32 +62,40 @@ class Word extends Controller
         return $ret;
     }
 
-    public function getChilds( string $word, Request $request )
+    private function getChildsOrParents( string $what, string $word, Request $request )
     {
         $w        = $this->getWord( $word );
         $rel      = $request->query( 'rtid', null );
         $per_page = $request->query( 'per_page', $this->relPagination );
+        $count    = $request->query( 'count', null );
+
+        if ( $count === null )
+            $count = false;
+        else
+            $count = $count !== 'false';
 
         if ( empty( $w ) )
             return [];
 
-        $relations = $this->dbRelation->where( 'n1', $w->_id );
+        $relations = $this->dbRelation->where( $what, $w->_id );
 
         if ( $rel !== null )
             $relations->where( 't', (int) $rel );
 
-        return $relations->simplePaginate( (int) $per_page );
+        if ( $count )
+            return $relations->count();
+        else
+            return $relations->simplePaginate( (int) $per_page );
     }
 
-    public function getParents( string $word )
+    public function getChilds( string $word, Request $request )
     {
-        $w = $this->getWord( $word );
+        return $this->getChildsOrParents( 'n1', $word, $request );
+    }
 
-        if ( empty( $w ) )
-            return [];
-
-        $relations = $this->dbRelation->where( 'n2', $w->_id );
-        return $relations->simplePaginate( $this->relPagination );
+    public function getParents( string $word, Request $request )
+    {
+        return $this->getChildsOrParents( 'n2', $word, $request );
     }
 
     public function autocomplete( string $word )
@@ -108,7 +116,7 @@ class Word extends Controller
 
             foreach ( $rels as $r )
             {
-                if ( in_array( $r->name, ['r_associated','r_chunk_sujet', 'r_chunck_objet', 'r_flpot'] ) || $r->info === '' || strpos( $r->info, '(interne)' ) === 0 )
+                if ( in_array( $r->name, ['r_chunk_sujet', 'r_chunck_objet', 'r_flpot'] ) || $r->info === '' || strpos( $r->info, '(interne)' ) === 0 )
                     $tmp[] = $r;
             }
             return $tmp;

@@ -1,14 +1,16 @@
 <script>
     const shared = {
         word: null, // Le mot en cours (chaine)
+        relation: null, //La relation en cours
         words: {}, //Des mots à rechercher si besoin
         relationTypes: null, //Les types de relations (toute la base de données)
         component: "show-welcome", //Le composant principal utilisé
         wordsData: {}, //Infos à stocker sur un mot (relations ...)
         config: {
             show_word: {
-                per_page: 2000,
-                max_page: 2
+                per_page: 150,
+                max_page: 10,
+                min_page_for_counts: 5
             },
             get_words: {
                 nb: 1000
@@ -16,15 +18,23 @@
             relations: {
                 exclude: []
             }
+        },
+        userConfig: {
+            sort_type: 'alpha',
+            show: {
+                weight: true,
+                empty : true,
+                noempty : true
+            }
         }
     };
     export default {
         data() {
             return {
-                wordComputed: false,
                 wordQ: [],
                 default: null,
-                shared: shared
+                shared: shared,
+                wordComputed: false, //En train de calculer les mots ?
             };
         },
         created: function ()
@@ -37,9 +47,12 @@
             //HISTORIQUE
             //==================================================================
             popstate(e) {
+//                console.log('pop');
 
                 if (e.state) {
+//                console.log(e.state);
                     shared.word = e.state.word;
+                    shared.relation = e.state.relation;
                 }
             },
 
@@ -51,17 +64,29 @@
             {
                 this[k] = v;
             },
-            $set(target, k, v) {
-                Vue.prototype.$set(target, k, v);
+            sset(target, k, v)
+            {
+                this.$set(target, k, v);
             },
             //==================================================================
             addHttpRequest(page, callThen, callCatch = null)
             {
-                axios.get(page).then(callThen).catch(callCatch);
+                var token = axios.CancelToken.source();
+                axios.get(page, {cancelToken: token.token}).then(callThen).catch(callCatch);
+                return token;
             },
             //==================================================================
-            changeWord(word) {
+            changeRelation(relation)
+            {
+                if (shared.relation == relation)
+                    return;
 
+                shared.relation = relation;
+                var data = this.$data.shared;
+                history.pushState(data, shared.relation, encodeURI("/" + shared.word + '/' + shared.relation));
+            },
+            changeWord(word)
+            {
                 if (shared.word == word)
                     return;
 
@@ -81,6 +106,14 @@
 
                 this.wordComputed = true;
                 this.fillWords();
+            },
+            getWord(wid) {
+
+                if (shared.words[wid])
+                    return shared.words[wid];
+
+                this.askForWord(wid);
+                return null;
             },
             fillWords: function ()
             {

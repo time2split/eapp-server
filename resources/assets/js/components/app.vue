@@ -8,13 +8,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="nav navbar-nav mr-auto">
                     <li>
-                        <a class="nav-link" href="#" @click="loadComponent('show-welcome')">Accueil</a>
+                        <a class="nav-link" href="#" @click="loadComponent('show-welcome',$event)">Accueil</a>
                     </li>
                     <li v-if="word" class="nav-item">
-                        <a class="nav-link" href="#" @click="loadComponent('show-word')">"{{ word }}"</a>
+                        <a class="nav-link" href="#" @click="loadComponent('show-word',$event)">"{{ word }}"</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" @click="loadComponent('show-relations')">Relations</a>
+                        <a class="nav-link" href="#" @click="loadComponent('show-relations',$event)">Relations</a>
                     </li>
                 </ul>
             </div>
@@ -43,16 +43,16 @@
         },
         props: {
             urlword: null,
-            urlwordrelation : null
+            urlwordrelation: null
         },
         data() {
             return HUB.$data.shared;
         },
         computed: {
-            showRelations () {
+            showRelations() {
                 var ret = [];
                 var ids = this.config.relations.exclude.map((rel) => rel._id)
-                
+
                 for (var rel of this.relationTypes)
                 {
                     if (ids.indexOf(rel._id) == -1)
@@ -65,11 +65,11 @@
         },
         created: function ()
         {
-            HUB.addHttpRequest('/@get/relationTypes',(response) => {
+            HUB.addHttpRequest('/@get/relationTypes', (response) => {
                 this.relationTypes = response.data;
             });
 
-            HUB.addHttpRequest('/@get/relationTypes?get=excluded',(response) => {
+            HUB.addHttpRequest('/@get/relationTypes?get=excluded', (response) => {
                 this.config.relations.exclude = response.data;
             });
 
@@ -78,7 +78,7 @@
 
             if (this.urlword != '')
                 this.word = this.urlword;
-
+            
             if (this.word != null)
                 this.loadComponent('show-word');
 
@@ -87,6 +87,9 @@
         methods: {
             loadComponent: function (component, e)
             {
+                if (e)
+                    e.preventDefault();
+
                 if (component == this.component)
                     return;
 

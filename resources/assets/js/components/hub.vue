@@ -8,7 +8,7 @@
         wordsData: {}, //Infos à stocker sur un mot (relations ...)
         config: {
             show_word: {
-                per_page: 150,
+                per_page: 200,
                 max_page: 10,
                 min_page_for_counts: 5
             },
@@ -23,7 +23,7 @@
             sort_type: 'alpha',
             show: {
                 weight: true,
-                empty : true,
+                empty : false,
                 noempty : true
             }
         }
@@ -87,6 +87,8 @@
             },
             changeWord(word)
             {
+                shared.relation = null;
+                
                 if (shared.word == word)
                     return;
 

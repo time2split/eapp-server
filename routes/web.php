@@ -20,4 +20,6 @@ Route::get( '@get/relationTypes', 'Word@relationTypes' );
 Route::get( '@get/words', 'Word@getWords' );
 
 
+Route::get( '@jdmpattern/{word?}', 'JDMPatternEngine' );
+
 Route::get( '/{word?}/{relation?}', 'Word@app' );

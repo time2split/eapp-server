@@ -47,4 +47,9 @@ class Atom
     {
         return $a->getValue() == $b->getValue();
     }
+
+    public function __toString()
+    {
+        return $this->isConstant() ? "'" . $this->getValue() . "'" : '?' . $this->getName();
+    }
 }

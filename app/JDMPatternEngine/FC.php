@@ -24,7 +24,7 @@ class FC
 
     public function directAsk( Term $conclusion )
     {
-        $search = $this->db->matchTerm( $conclusion );
+        $search = $this->db->matchingTerms( $conclusion );
 
         if ( $search !== false )
         {
@@ -35,63 +35,90 @@ class FC
 
     public function ask( Term $conclusion, FCInfos $info )
     {
-        $res = $info->moreData( $conclusion );
-
-//        if ( $res === false )
-//        {
-//            throw new Exception( "Impossible de remplir la base de connaissances" );
-//        }
+        $info->moreData( $conclusion );
         $direct = $this->directAsk( $conclusion );
 
         if ( $direct !== null )
-            return [$direct];
+            return ['rule' => null, 'result' => $direct];
 
-        $rules = $this->rules;
-
+        $rules       = $this->rules;
         $applicables = $rules->getRulesWithConclusion( $conclusion );
 
-        //Règles applicables
+//Règles applicables
         foreach ( $applicables as $rule )
         {
             $rconcl = $rule->getConclusion();
             $bind   = [];
 
+//RÉCUPÉRATION DES CONSTANTES À BINDER
             foreach ( $rconcl->getAtoms() as $k => $atom )
             {
                 $catom       = $conclusion->getAtom( $k );
                 $name        = $atom->getName();
-                $val         = $conclusion->getAtom($k)->getValue();
+                $val         = $conclusion->getAtom( $k )->getValue();
                 $bind[$name] = $val;
             }
+            $asks       = [];
+            $finded     = true;
             $ruleBinded = clone $rule;
             $ruleBinded->bind( $bind );
-            $info->moreData( $rbinded );
-//
-//            foreach ( $rule->getHypothesis() as $hrule )
-//            {
-////                $res = $this->ask();
-//
-//                if ( $res === true )
-//                {
-//                    
-//                }
-//                // Trouvé négatif
-//                elseif ( $res === false )
-//                {
-//                    //TODO
-//                    break;
-//                }
-//                // Ne sait pas
-//                else
-//                {
-//                    break;
-//                }
-//            }
-//            //hypotheses verifiées
-//            if ( $res )
-//            {
-//                echo 'YES !!';
-//            }
+
+            foreach ( $ruleBinded->getHypotheses() as $hterm )
+            {
+                var_dump( (string) $hterm );
+//                foreac(h ( $hypos->getAtoms() as $hterm )
+                {
+                    $info->calls++;
+                    $info->depth++;
+                    $ret = $this->ask( $hterm, $info );
+                    $info->depth--;
+
+                    if ( empty( $ret ) )
+                    {
+                        $finded = false;
+                        break;
+                    }
+                    $asks[] = $ret['result'];
+                }
+            }
+
+            if ( $finded )
+            {
+                $vars  = $ruleBinded->getVariables();
+                $cvars = count( $vars );
+
+                if ( $cvars == 1 )
+                {
+                    $var    = array_pop( $vars );
+                    $min    = null;
+                    $minpos = null;
+
+                    //Calcul du min
+                    foreach ( $asks as $k => $a )
+                    {
+                        $c = count( $a );
+
+                        if ( $min === null || $min > $c )
+                        {
+                            $min    = $c;
+                            $minpos = $k;
+                        }
+                    }
+
+                    foreach($asks[$minpos] as $a)
+                    {
+                        $var->setValue($a);
+                    }
+                }
+                else
+                    throw new Exception( "Sais pas faire avec $cvars variables!" );
+//Pour le moment 1 variable 2 hypos
+//Vérifier en bindant
+
+
+
+                echo "yep !\n";
+            }
         }
         return null;
     }

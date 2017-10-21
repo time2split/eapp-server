@@ -59,7 +59,7 @@ class Rule
         } );
     }
 
-    public function getHypothesis()
+    public function getHypotheses()
     {
         return $this->hypothesis;
     }
@@ -72,6 +72,11 @@ class Rule
     public function getConclusion( int $i = 0 )
     {
         return $this->conclusions[$i];
+    }
+    
+    public function getAllTerms()
+    {
+        return array_merge($this->getHypotheses(), $this->getConclusions());
     }
 
     private function cloneOne( &$what )

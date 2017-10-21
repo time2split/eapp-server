@@ -27,11 +27,15 @@ class Database
 //        return array_pop( $res );
 //    }
 
-    public function matchTerm( Term $pattern )
+    public function matchingTerms( Term $pattern )
     {
         $x = $pattern->getAtom(0);
         $y = $pattern->getAtom(1);
 
+        echo "match ? \n";
+        var_dump($x);
+        var_dump($y);
+        
         if ( $x->isVariable() && $y->isVariable() )
         {
             $pred = $pattern->getPredicate();
@@ -43,19 +47,19 @@ class Database
         elseif ( $x->isVariable() )
         {
             $pred = $pattern->getPredicate();
-            $y    = $pattern->getAtom(1);
+            $y    = $pattern->getAtom(1)->getValue();
 
             $f = function($a) use ($pred, $y) {
-                return $pred = $a->getPredicate() && $y == $a->getAtom(1);
+                return $pred = $a->getPredicate() && $y === $a->getAtom(1)->getValue();
             };
         }
         elseif ( $y->isVariable() )
         {
             $pred = $pattern->getPredicate();
-            $x    = $pattern->getAtom(0);
+            $x    = $pattern->getAtom(0)->getValue();
 
             $f = function($a) use ($pred, $x) {
-                return $pred = $a->getPredicate() && $x == $a->getAtom(0);
+                return $pred = $a->getPredicate() && $x === $a->getAtom(0)->getValue();
             };
         }
         else
@@ -69,6 +73,7 @@ class Database
         if ( empty( $res ) )
             return false;
 
-        return array_pop( $res );
+        return $res;
+//        return array_pop( $res );
     }
 }

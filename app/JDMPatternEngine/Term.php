@@ -116,8 +116,29 @@ class Term
     {
         return $a->getPredicate() === $b->getPredicate() && self::sameAtoms( $a, $b );
     }
-//    static function getVariables( ...Terms)
-//    {
-//        
-//    }
+
+    public function getConstants()
+    {
+        $ret = [];
+        foreach ( $this->atoms as $i => $atom )
+        {
+            if ( $atom->isConstant() )
+                $ret[$i] = $atom;
+        }
+        return $ret;
+    }
+
+    public function __toString()
+    {
+        $ret = "$this->predicate(";
+        $tmp = [];
+
+        foreach ( $this->atoms as $atom )
+        {
+            $tmp[] = (string) $atom;
+        }
+        $ret .= implode( ',', $tmp );
+        $ret .= ")";
+        return $ret;
+    }
 }

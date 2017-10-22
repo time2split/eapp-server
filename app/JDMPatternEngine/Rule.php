@@ -54,7 +54,7 @@ class Rule
 
     public function getVariables()
     {
-        array_filter( $this->atoms, function($a) {
+        return array_filter( $this->atoms, function($a) {
             return $a->isVariable();
         } );
     }
@@ -62,6 +62,11 @@ class Rule
     public function getHypotheses()
     {
         return $this->hypothesis;
+    }
+
+    public function getHypothesis( int $i = 0 )
+    {
+        return $this->hypothesis[$i];
     }
 
     public function getConclusions()
@@ -73,10 +78,10 @@ class Rule
     {
         return $this->conclusions[$i];
     }
-    
+
     public function getAllTerms()
     {
-        return array_merge($this->getHypotheses(), $this->getConclusions());
+        return array_merge( $this->getHypotheses(), $this->getConclusions() );
     }
 
     private function cloneOne( &$what )
@@ -113,8 +118,20 @@ class Rule
             }
         }
     }
-//    public function hasConclusion( Predicate $pred )
-//    {
-//        return $this->conclusion == $pred;
-//    }
+
+    public function __toString()
+    {
+        $ret = '';
+        foreach ( $this->getHypotheses() as $hterm )
+        {
+            $ret .= (string) $hterm . ' ';
+        }
+        $ret .= '->';
+
+        foreach ( $this->getConclusions() as $cterm )
+        {
+            $ret .= ' ' . (string) $cterm;
+        }
+        return $ret;
+    }
 }

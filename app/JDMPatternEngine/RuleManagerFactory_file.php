@@ -31,7 +31,7 @@ class RuleManagerFactory_file
             $line = trim( $line );
 
             if ( empty( $line ) )
-                return;
+                continue;
 
             $pattern = "/([\w_]+)\((.+?)\)/";
 

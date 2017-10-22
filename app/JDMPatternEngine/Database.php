@@ -3,7 +3,6 @@
 namespace App\JDMPatternEngine;
 
 use App\JDMPatternEngine\Term;
-use App\JDMPatternEngine\Variable;
 
 class Database
 {
@@ -14,58 +13,45 @@ class Database
         $this->predicates = array_merge( $this->predicates, $preds );
     }
 
-//    public function searchTerm( Term $pred )
-//    {
-//        $f = function($a) use ($pred) {
-//            return Term::sameNature( $pred, $a );
-//        };
-//        $res = array_filter( $this->predicates, $f );
-//
-//        if ( empty( $res ) )
-//            return false;
-//
-//        return array_pop( $res );
-//    }
-
     public function matchingTerms( Term $pattern )
     {
-        $x = $pattern->getAtom(0);
-        $y = $pattern->getAtom(1);
+        $x = $pattern->getAtom( 0 );
+        $y = $pattern->getAtom( 1 );
 
-        echo "match ? \n";
-        var_dump($x);
-        var_dump($y);
-        
         if ( $x->isVariable() && $y->isVariable() )
         {
             $pred = $pattern->getPredicate();
 
             $f = function($a) use ($pred) {
-                return $pred = $a->getPredicate();
+                return $pred === $a->getPredicate();
             };
         }
         elseif ( $x->isVariable() )
         {
             $pred = $pattern->getPredicate();
-            $y    = $pattern->getAtom(1)->getValue();
+            $y    = $pattern->getAtom( 1 )->getValue();
 
             $f = function($a) use ($pred, $y) {
-                return $pred = $a->getPredicate() && $y === $a->getAtom(1)->getValue();
+                return $pred === $a->getPredicate() && $y === $a->getAtom( 1 )->getValue();
             };
         }
         elseif ( $y->isVariable() )
         {
             $pred = $pattern->getPredicate();
-            $x    = $pattern->getAtom(0)->getValue();
+            $x    = $pattern->getAtom( 0 )->getValue();
 
             $f = function($a) use ($pred, $x) {
-                return $pred = $a->getPredicate() && $x === $a->getAtom(0)->getValue();
+                return $pred === $a->getPredicate() && $x === $a->getAtom( 0 )->getValue();
             };
         }
         else
         {
-            $f = function($a) use ($pattern) {
-                return Term::sameNature( $pattern, $a );
+            $pred = $pattern->getPredicate();
+            $x    = $pattern->getAtom( 0 )->getValue();
+            $y    = $pattern->getAtom( 1 )->getValue();
+
+            $f = function($a) use ($pred, $x, $y) {
+                return $pred === $a->getPredicate() && $x === $a->getAtom( 0 )->getValue() && $y === $a->getAtom( 1 )->getValue();
             };
         }
         $res = array_filter( $this->predicates, $f );
@@ -74,6 +60,5 @@ class Database
             return false;
 
         return $res;
-//        return array_pop( $res );
     }
 }

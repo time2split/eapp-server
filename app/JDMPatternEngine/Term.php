@@ -43,6 +43,11 @@ class Term
         return $this->predicate;
     }
 
+    public function setPredicate($p)
+    {
+        $this->predicate = $p;
+    }
+
     public function addAtom( Atom ... $atoms )
     {
         $this->atoms = array_merge( $this->atoms, $atoms );
@@ -64,47 +69,101 @@ class Term
     }
 
     /**
-     * Retourne null si 2 variables ; $b->$var si $this variable ; $b != $this sinon
+     * Cherche les position d'un atome $a dans le terme
+     * @param Atom $a
+     * @param bool $strict
+     * @return type
      */
-    public function variableMatch( $var, Term $b )
+    public function getAtomPos( Atom $a, bool $strict = true )
     {
-        if ( $b->getPredicate() !== $this->getPredicate() )
-            return null;
+        $ret = [];
 
-        $ret = ['x' => null, $y => null];
-        $tv  = $this->$var;
-        $bv  = $b->$var;
-
-        if ( $tx->isVariable() )
+        foreach ( $this->atoms as $k => $atom )
         {
-            if ( $by->isVariable() )
-                return null;
-            else
-                return $bv;
+            if ( ($strict && $atom === $a) || (!$strict && $atom == $a) )
+            {
+                $ret[] = $k;
+            }
         }
-        else
-        {
-            return $bv == $tv;
-        }
+        return $ret;
     }
 
-    static function sameAtoms( Term $a, Term $b )
+    public function variableMatch( Term $b )
+    {
+        return self::variableMatch_( $this, $b );
+    }
+
+    /**
+     * Vérifie si $a peut matcher $b en terme de variables
+     * @param \App\JDMPatternEngine\Term $a
+     * @param \App\JDMPatternEngine\Term $b
+     */
+    static public function variableMatch_( Term $a, Term $b )
     {
         $aas = $a->getAtoms();
         $bas = $b->getAtoms();
 
-        if ( count( $aas ) != count( $bas ) )
+        if ( ($c = count( $aas )) !== count( $bas ) )
             return false;
 
-        foreach ( $aas as $k => $aa )
+        for ( $i = 0; $i < $c; $i++ )
         {
-            $ba = $bas[$k];
+            $aa = $aas[$i];
+            $ba = $bas[$i];
 
-            if ( $aa != $ba )
+            if ( $aa->isVariable() )
+                ;
+            elseif ( $ba->isConstant() )
+            {
+                if ( $ba->getValue() !== $aa->getValue() )
+                    return false;
+            }
+            else
                 return false;
         }
         return true;
     }
+    /**
+     * Retourne null si 2 variables ; $b->$var si $this variable ; $b != $this sinon
+     */
+//    public function variableMatch( $var, Term $b )
+//    {
+//        if ( $b->getPredicate() !== $this->getPredicate() )
+//            return null;
+//
+//        $ret = ['x' => null, $y => null];
+//        $tv  = $this->$var;
+//        $bv  = $b->$var;
+//
+//        if ( $tx->isVariable() )
+//        {
+//            if ( $by->isVariable() )
+//                return null;
+//            else
+//                return $bv;
+//        }
+//        else
+//        {
+//            return $bv == $tv;
+//        }
+//    }
+//    static public function sameAtoms( Term $a, Term $b )
+//    {
+//        $aas = $a->getAtoms();
+//        $bas = $b->getAtoms();
+//
+//        if ( count( $aas ) != count( $bas ) )
+//            return false;
+//
+//        foreach ( $aas as $k => $aa )
+//        {
+//            $ba = $bas[$k];
+//
+//            if ( $aa != $ba )
+//                return false;
+//        }
+//        return true;
+//    }
 
     /**
      * Comparaison sans le poids (weight)
@@ -112,10 +171,10 @@ class Term
      * @param \App\JDMPatternEngine\Term $b
      * @return type
      */
-    static function sameNature( Term $a, Term $b )
-    {
-        return $a->getPredicate() === $b->getPredicate() && self::sameAtoms( $a, $b );
-    }
+//    static public function sameNature( Term $a, Term $b )
+//    {
+//        return $a->getPredicate() === $b->getPredicate() && self::sameAtoms( $a, $b );
+//    }
 
     public function getConstants()
     {
@@ -130,7 +189,8 @@ class Term
 
     public function __toString()
     {
-        $ret = "$this->predicate(";
+        $w = $this->weight != 0 ? "[$this->weight]" : null;
+        $ret = "$this->predicate$w(";
         $tmp = [];
 
         foreach ( $this->atoms as $atom )

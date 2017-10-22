@@ -6,7 +6,8 @@ use App\JDMPatternEngine\Database;
 use App\JDMPatternEngine\RuleManager;
 use App\JDMPatternEngine\Term;
 use App\JDMPatternEngine\FCInfos;
-use Exception;
+
+//use Exception;
 
 /**
  * Chaînage avant
@@ -35,91 +36,179 @@ class FC
 
     public function ask( Term $conclusion, FCInfos $info )
     {
+        $ret    = [];
         $info->moreData( $conclusion );
         $direct = $this->directAsk( $conclusion );
 
         if ( $direct !== null )
-            return ['rule' => null, 'result' => $direct];
-
+        {
+            $ret[] = ['rule' => null, 'bind' => null, 'result' => $direct];
+            goto end;
+        }
         $rules       = $this->rules;
         $applicables = $rules->getRulesWithConclusion( $conclusion );
 
-//Règles applicables
+        //Règles applicables
         foreach ( $applicables as $rule )
         {
             $rconcl = $rule->getConclusion();
             $bind   = [];
 
-//RÉCUPÉRATION DES CONSTANTES À BINDER
+            //RÉCUPÉRATION DES CONSTANTES À BINDER
             foreach ( $rconcl->getAtoms() as $k => $atom )
             {
-                $catom       = $conclusion->getAtom( $k );
                 $name        = $atom->getName();
                 $val         = $conclusion->getAtom( $k )->getValue();
                 $bind[$name] = $val;
             }
             $asks       = [];
-            $finded     = true;
             $ruleBinded = clone $rule;
             $ruleBinded->bind( $bind );
 
+            //On demande pour chaque hypothèse si elle est présente dans la DB
             foreach ( $ruleBinded->getHypotheses() as $hterm )
             {
-                var_dump( (string) $hterm );
-//                foreac(h ( $hypos->getAtoms() as $hterm )
-                {
-                    $info->calls++;
-                    $info->depth++;
-                    $ret = $this->ask( $hterm, $info );
-                    $info->depth--;
+                $info->calls++;
+                $info->depth++;
+                $ask = $this->ask( $hterm, $info );
+                $info->depth--;
 
-                    if ( empty( $ret ) )
-                    {
-                        $finded = false;
-                        break;
-                    }
-                    $asks[] = $ret['result'];
+                if ( empty( $ask ) )
+                {
+                    goto end;
                 }
+                $asks[] = $ask[0]['result'];
+            }
+            $vars  = $ruleBinded->getVariables();
+            $cvars = count( $vars );
+
+            if ( $cvars == 0 )
+            {
+                $ret[] = ['rule' => $rule, 'bind' => $ruleBinded, 'result' => [$conclusion]];
+                goto end;
+            }
+            $hypos = $ruleBinded->getHypotheses();
+            $binds = [];
+
+            foreach ( $vars as $vpos => $var )
+            {
+                $binds[$vpos] = [];
+
+                $matchingTerms = array_filter( $hypos, function($e) use ($var) {
+                    return !empty( $e->getAtomPos( $var ) );
+                } );
+
+                //On cherche le min dans asks
+                foreach ( $matchingTerms as $pos => $mterm )
+                {
+                    $c = count( $asks[$pos] );
+
+                    if ( !isset( $min ) || $c < $min )
+                    {
+                        $min    = $c;
+                        $minpos = $pos;
+                    }
+                }
+                $term    = $matchingTerms[$minpos];
+                $posAtom = $term->getAtomPos( $var )[0];
+
+                //On construit l'ensemble des bindages
+                foreach ( $asks[$minpos] as $bind )
+                {
+                    $val            = $bind->getAtom( $posAtom )->getValue();
+                    $binds[$vpos][] = $val;
+                }
+                $binds[$vpos] = array_unique( $binds[$vpos], SORT_NUMERIC );
             }
 
-            if ( $finded )
+            //On binde et on teste
+            $bindVarPos = [];
+            $bindPos    = [];
+            $bindCounts = [];
+
+            foreach ( $binds as $pos => $bind )
             {
-                $vars  = $ruleBinded->getVariables();
-                $cvars = count( $vars );
+                $bindCounts[] = count( $bind );
+                $bindPos[]    = 0;
+                $bindVarPos[] = $pos;
+            }
+            $i = $cvars - 1;
 
-                if ( $cvars == 1 )
+            foreach ( $vars as $pos => $var )
+            {
+                $var->setValue( $binds[$pos][0] );
+            }
+
+            while ( true )
+            {
+                $bindPos[$i] ++;
+
+                //Fin des combinaisons courrantes
+                if ( $bindPos[$i] == $bindCounts[$i] )
                 {
-                    $var    = array_pop( $vars );
-                    $min    = null;
-                    $minpos = null;
-
-                    //Calcul du min
-                    foreach ( $asks as $k => $a )
+                    do
                     {
-                        $c = count( $a );
+                        $bindPos[$i] = 0;
 
-                        if ( $min === null || $min > $c )
-                        {
-                            $min    = $c;
-                            $minpos = $k;
-                        }
-                    }
+                        //Fin
+                        if ( $i === 0 )
+                            break 2;
 
-                    foreach($asks[$minpos] as $a)
-                    {
-                        $var->setValue($a);
+                        $var = $vars[$bindVarPos[$i]];
+                        $var->setValue( $binds[$bindVarPos[$i]][$bindPos[$i]] );
+                        $i--;
+                        $bindPos[$i] ++;
+                        $var = $vars[$bindVarPos[$i]];
+                        $var->setValue( $binds[$bindVarPos[$i]][$bindPos[$i]] );
                     }
+                    while ( $bindPos[$i] == $bindCounts[$i] );
+
+                    $i = $cvars - 1;
                 }
                 else
-                    throw new Exception( "Sais pas faire avec $cvars variables!" );
-//Pour le moment 1 variable 2 hypos
-//Vérifier en bindant
+                {
+                    $var = $vars[$bindVarPos[$i]];
+                    $var->setValue( $binds[$bindVarPos[$i]][$bindPos[$i]] );
+                }
+                $directAsks = [];
 
+                //Vérification
+                foreach ( $ruleBinded->getHypotheses() as $hterm )
+                {
+                    $tmp = $this->directAsk( $hterm );
 
+                    if ( $tmp === null )
+                    {
+                        continue 2;
+                    }
+                    $directAsks[] = $tmp;
+                }
+                //Construction du résultat
+                $retBind = clone $ruleBinded;
+                $wBind   = 0;
 
-                echo "yep !\n";
+                //Calcul du poids
+                foreach ( $retBind->getHypotheses() as $k => $hterm )
+                {
+                    $tmpa = $this->db->matchingTerms( $hterm );
+                    $tmp  = array_pop( $tmpa );
+
+                    //Normalement impossible
+                    if ( $tmp !== null )
+                    {
+                        $h     = $retBind->getHypothesis( $k );
+                        $h->setWeight( $tmp->getWeight() );
+                        $wBind += $tmp->getWeight();
+                    }
+                }
+                $retBind->getConclusion()->setWeight( $wBind );
+                $conclBind = $retBind->getConclusion();
+
+                $ret[] = ['rule' => $rule, 'bind' => $retBind, 'result' => [$conclBind]];
+                $this->db->addTerm( $conclBind );
             }
         }
-        return null;
+        end:
+        return $ret;
     }
 }

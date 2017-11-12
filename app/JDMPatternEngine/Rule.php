@@ -58,6 +58,13 @@ class Rule
             return $a->isVariable();
         } );
     }
+    
+//    public function getWithVariable($vname)
+//    {
+//        return array_filter( $this->atoms, function($a) {
+//            return $a->isVariable() && $a->getName() === $vname;
+//        } );
+//    }
 
     public function getHypotheses()
     {

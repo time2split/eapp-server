@@ -18,13 +18,78 @@ class Infos extends FCInfos
 {
     private $db;
     private $Relation;
-    private $maxDepth = 2;
-    private $asked    = []; //Déjà demandés
+    public $maxDepth = 1;
+    private $asked   = []; //Déjà demandés
 
     public function __construct( $db, Relation $relation )
     {
         $this->db       = $db;
         $this->Relation = $relation;
+    }
+
+    public function canDoRecursion()
+    {
+        if ( $this->depth >= $this->maxDepth )
+            return null;
+
+        if ( $this->calls > 100 )
+            return false;
+
+        return true;
+    }
+
+    public function getNbMaxResults()
+    {
+        switch ( $this->depth )
+        {
+            case 0:
+                return 4;
+            case 1:
+                return 1;
+            default:
+                return 1;
+        }
+    }
+
+    public function selectDomain( $domain )
+    {
+        usort( $domain, function($terma, $termb) {
+            return $termb->getWeight() - $terma->getWeight();
+        } );
+        $nbVal = 0;
+
+        switch ( $this->depth )
+        {
+            case 0 : $nbVal = 16;
+                break;
+            case 1 : $nbVal = 10;
+                break;
+            default : $nbVal = 10;
+        }
+        $a     = array_merge( array_slice( $domain, 0, $nbVal / 2 ), array_slice( $domain, - $nbVal / 2 ) );
+        $randa = $domain;
+        shuffle( $randa );
+//        $randa = array_slice( $randa, $nbVal / 3 );
+//        $a     = array_merge( $a, $randa );
+        return array_unique( $a );
+    }
+
+    public function computeWeight( $ruleBinded )
+    {
+        $w      = 0;
+        $factor = 1;
+
+        foreach ( $ruleBinded->getHypotheses() as $atom )
+        {
+            $tmp = $atom->getWeight();
+            $neg = $tmp < 0;
+
+            if ( $neg )
+                $factor = -1;
+
+            $w += $neg ? -$tmp : $tmp;
+        }
+        return $w / count( $ruleBinded->getHypotheses() ) * $factor;
     }
 
     private function moreRelationsAskFor( $demand )
@@ -37,8 +102,9 @@ class Infos extends FCInfos
             foreach ( $demand as $k => $v )
             {
                 if ( isset( $asked[$k] ) && $asked[$k] == $v )
+                {
                     throw new Exception( "Ask for $k => $v already presents" );
-
+                }
                 $asked[$k] = $v;
                 $q         = $q->where( $k, $v );
             }
@@ -53,9 +119,6 @@ class Infos extends FCInfos
 
             if ( !empty( $tmpAsked ) )
             {
-//                var_dump( "ALREADY ASKED !!!!" );
-//                var_dump( $demand );
-//                var_dump( $tmpAsked );
                 return [];
             }
             $this->asked[] = clone $demand;
@@ -70,7 +133,9 @@ class Infos extends FCInfos
             return $this->moreRelationsAskFor( $demand );
         }
         else
+        {
             throw new Exception( "Unknow ask !" );
+        }
     }
 
     private function relations2Terms( $relations )
@@ -142,12 +207,16 @@ class JDMPatternEngine extends Controller
         $db        = new Database();
         $fchecking = new FC( $rules, $db );
 
-        $x = "chat";
-        $p = "r_domain";
-        $y = "sport";
+//        $x = "chat";
+//        $p = "r_domain";
+//        $y = "sport";
+//        $p = "r_has_part";
+//        $y = "écaille";
 
-        $p = "r_has_part";
-        $y = "écaille";
+        $x = "plage";
+        $p = 'r_associated';
+//        $y = 'sable';
+        $y = 'mur';
 
 //        $p = "r_has_part";
 //        $y = "queue";
@@ -163,18 +232,46 @@ class JDMPatternEngine extends Controller
 
         $info = new Infos( $db, $Relation );
         $ret  = $fchecking->ask( $question, $info );
+        $this->printResult( $ret );
+    }
 
-        echo "RESULT \n";
-
+    private function printResult( $ret )
+    {
         foreach ( $ret as $res )
         {
-            $rule = $res['rule'];
-            $bind = $res['bind'];
-            $this->makeRulesWithWords( $rule );
-            $this->makeRulesWithWords( $bind );
-//            foreach()
+            $rule   = $res['rule'];
+            $bind   = $res['bind'];
+            $result = $res['result'];
+            $asks   = $res['asks'];
+
+            if ( null !== ( $rule ) )
+                $this->makeRulesWithWords( $rule );
+
+            if ( null !== ( $bind ) )
+                $this->makeRulesWithWords( $bind );
+
             var_dump( (string) $rule );
             var_dump( (string) $bind );
+
+            foreach ( $result as $r )
+            {
+                echo "$r\n";
+            }
+
+            foreach ( $asks as $ask )
+            {
+                foreach ( $ask as $aske )
+                {
+                    if ( is_array( $aske ) )
+                    {
+//            var_dump( $aske );
+                        echo "<<<\n";
+                        $this->printResult( $ask );
+                        echo ">>>\n";
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -196,7 +293,18 @@ class JDMPatternEngine extends Controller
                     continue;
 
                 $word = $this->dbWord->getWord( $atom->getValue() );
-                $atom->setValue( $word->n );
+                $word = $word->n;
+
+//                while ( preg_match( "#[[:digit:]]+#", $word, $matches ) )
+//                {
+//                    $idw  = $matches[0];
+//                    $tmpword = $this->dbWord->getWord( (int) $matches[0] );
+//                    $word = preg_replace( "#[[:digit:]]+#", $tmpword, $word );
+//                    var_dump($word);
+//                    exit;
+////                    $this->dbWord->getWord( (int) $matches[0] );
+//                }
+                $atom->setValue( $word );
             }
         }
     }

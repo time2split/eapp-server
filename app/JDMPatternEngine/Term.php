@@ -43,7 +43,7 @@ class Term
         return $this->predicate;
     }
 
-    public function setPredicate($p)
+    public function setPredicate( $p )
     {
         $this->predicate = $p;
     }
@@ -176,6 +176,27 @@ class Term
 //        return $a->getPredicate() === $b->getPredicate() && self::sameAtoms( $a, $b );
 //    }
 
+    public function getVariables()
+    {
+        $ret = [];
+        foreach ( $this->atoms as $i => $atom )
+        {
+            if ( $atom->isVariable() )
+                $ret[$i] = $atom;
+        }
+        return $ret;
+    }
+
+    public function hasVariable( $varName )
+    {
+        foreach ( $this->atoms as $i => $atom )
+        {
+            if ( $atom->isVariable() && $atom->getName() == $varName )
+                return true;
+        }
+        return false;
+    }
+
     public function getConstants()
     {
         $ret = [];
@@ -189,7 +210,7 @@ class Term
 
     public function __toString()
     {
-        $w = $this->weight != 0 ? "[$this->weight]" : null;
+        $w   = $this->weight != 0 ? "[$this->weight]" : null;
         $ret = "$this->predicate$w(";
         $tmp = [];
 

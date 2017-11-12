@@ -30,7 +30,7 @@ class RuleManagerFactory_file
 //            $id   = 0; //Id pour noms générés
             $line = trim( $line );
 
-            if ( empty( $line ) )
+            if ( empty( $line ) || $line[0] == '#' )
                 continue;
 
             $pattern = "/([\w_]+)\((.+?)\)/";

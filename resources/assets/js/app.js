@@ -19,4 +19,11 @@ window.Vue = require('vue');
  * or customize the JavaScript scaffolding to fit your unique needs.
  */
 
-require('./vue/app.js');
+//require('./vue/app_body.js');
+
+new Vue({
+    el: '#app',
+    components: {
+        'my-app': require('./components/app_body.vue')
+    }
+});

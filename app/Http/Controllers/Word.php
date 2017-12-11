@@ -24,6 +24,11 @@ class Word extends Controller
 
     public function app( string $word = null, string $relation = null )
     {
+        if ( is_numeric( $word ) )
+        {
+            $w    = $this->dbWord->find( (int) $word );
+            $word = $w->n;
+        }
         return view( 'welcome', ['word' => $word, 'word_relation' => $relation] );
     }
 
@@ -45,6 +50,33 @@ class Word extends Controller
 
         $wa = $w->toArray();
 
+        if ( !isset( $wa['nf'] ) )
+            $wa['nf'] = $wa['n'];
+
+//        $name = $wa['n'];
+//        preg_match_all( "#>(\d+)#", $name, $matches );
+//
+//        if ( empty( $matches[1] ) )
+//        {
+//            $wa['N'] = $name;
+//        }
+//        else
+//        {
+//            $replacements = [];
+//
+//            foreach ( $matches[1] as $match )
+//            {
+//                $tmp = $this->get( $match );
+//
+//                if ( empty( $tmp ) )
+//                    $tmp = null;
+//                else
+//                    $tmp = $tmp['word']['N'];
+//
+//                $replacements[] = $tmp;
+//            }
+//            $wa['N'] = preg_replace( array_fill( 0, 2, "#(\d+)#" ), $replacements, $name );
+//        }
         $ret = ['word' => $wa];
         return $ret;
     }

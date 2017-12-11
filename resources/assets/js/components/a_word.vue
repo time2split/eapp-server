@@ -2,7 +2,7 @@
     <div>
         <span v-if="word">
             <a :href="'/' + word.n" @click="changeWord(word.n,$event)">
-                {{word.n}}
+                {{word.nf}}
         </a>
     </span>
     <span v-else>

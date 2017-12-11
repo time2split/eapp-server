@@ -10,7 +10,6 @@
         <div id="app">
             <my-app urlword="{{ $word }}" urlwordrelation="{{ $word_relation }}"></my-app>
         </div>
-        <script src="/js/app.js" >
-        </script>
+        <script src="/js/app.js" ></script>
     </body>
 </html>

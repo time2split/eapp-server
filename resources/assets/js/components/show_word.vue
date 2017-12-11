@@ -2,7 +2,8 @@
     <section>
         <div v-if="word" class="panel panel-default">
             <div class="panel-heading">
-                <h1>{{ word }}</h1>
+                <h1 v-if="wdata">{{ wdata.nf }}</h1>
+                <h1 v-else>{{ word }}</h1>
             </div>
             <show-word-config></show-word-config>
             <div class="panel-body">
@@ -67,6 +68,8 @@
             this.$watch('word', this.changeTheWord);
             this.$watch('relation', this.changeTheWord);
             this.$watch('userConfig.sort_type', this.resort)
+            this.$watch('rdata', this.setHtmlTitle);
+            this.$watch('wdata', this.setHtmlTitle);
             HUB.$watch('wordComputed', this.resort);
         },
         destroyed() {
@@ -203,13 +206,29 @@
                     this.cancelToken.push(tok2);
             }
             },
+            setHtmlTitle() {
+                var title = HUB.$data.shared.htmlTitle;
+                
+                if(this.wdata == null)
+                    return;
+
+                if (this.relation === null)
+                {
+                    title = title + ' - ' + this.wdata.nf;
+                } else
+                {
+
+                    title = title + ' - ' + this.wdata.nf + ' : ' + this.rdata.name;
+                }
+                $('title').text(title);
+            },
             changeTheWord() {
                 this.doonce_counts = false;
                 this.pages = 0;
                 this.fillCounts_options = {};
 
-                console.log(this.word)
-                console.log(this.relation)
+//                console.log(this.word)
+//                console.log(this.relation)
 
 //                if (this.wordsData[this.word])
 //                {
@@ -223,6 +242,7 @@
 
                     var tok = HUB.addHttpRequest('/@word/' + this.word, (response) => {
                         this.wdata = response.data.word;
+//                        HUB.$data.shared.wdata = this.wdata;
 //                        Vue.set(this.wordsData, this.word, JSON.stringify(this.$data));
 //                        console.log(this.wdata);
                     });
@@ -249,6 +269,7 @@
                         }
                     }
                 }
+
                 if (this.relation !== null)
                 {
                     for (let rel of this.showRelations)
@@ -259,6 +280,7 @@
                             break;
                         }
                     }
+                    
                     this.fillCounts_options = {relations: [this.rdata]};
                     {
                         let options = {

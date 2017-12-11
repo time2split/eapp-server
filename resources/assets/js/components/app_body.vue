@@ -1,9 +1,6 @@
 <template>
-    <div class="container">
+    <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon">Déplier</span>
-            </button>
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="nav navbar-nav mr-auto">
@@ -25,15 +22,14 @@
                 </div>
             </div>
         </nav>
-        <div  v-if="relationTypes">
+        <div v-if="relationTypes">
             <component v-bind:is="component" :config="config" :userConfig="userConfig" :showRelations="showRelations" :relationTypes="relationTypes" :wordsData="wordsData" :word="word" :relation="relation" :words="words"></component>
         </div>
     </div>
-
-</div>
 </template>
 <script>
     import { HUB } from '../vue/data.js';
+    
     export default {
         components: {
             'nav-search': require('./search.vue'),
@@ -78,7 +74,7 @@
 
             if (this.urlword != '')
                 this.word = this.urlword;
-            
+
             if (this.word != null)
                 this.loadComponent('show-word');
 

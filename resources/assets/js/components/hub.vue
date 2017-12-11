@@ -5,6 +5,7 @@
         words: {}, //Des mots à rechercher si besoin
         relationTypes: null, //Les types de relations (toute la base de données)
         component: "show-welcome", //Le composant principal utilisé
+        htmlTitle: null,
         wordsData: {}, //Infos à stocker sur un mot (relations ...)
         config: {
             show_word: {
@@ -23,8 +24,8 @@
             sort_type: 'alpha',
             show: {
                 weight: true,
-                empty : false,
-                noempty : true
+                empty: false,
+                noempty: true
             }
         }
     };
@@ -41,6 +42,7 @@
         {
             window.onpopstate = this.popstate;
             this.$watch('wordQ', this.getAWord);
+            shared.htmlTitle = $('title').text();
         },
         methods: {
             //==================================================================
@@ -88,7 +90,7 @@
             changeWord(word)
             {
                 shared.relation = null;
-                
+
                 if (shared.word == word)
                     return;
 

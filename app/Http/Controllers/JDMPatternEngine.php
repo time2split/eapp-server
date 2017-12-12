@@ -13,6 +13,7 @@ use App\JDMPatternEngine\Term;
 use App\Word;
 use App\Relation;
 use App\RelationType;
+use Illuminate\Http\Request;
 
 class Infos extends FCInfos
 {
@@ -192,7 +193,7 @@ class JDMPatternEngine extends Controller
         $this->dbRelationType = $dbRelationType;
     }
 
-    public function __invoke()
+    public function __invoke( Request $r, string $worda, string $relation, string $wordb )
     {
         $ret          = null;
         $Word         = $this->dbWord;
@@ -212,37 +213,45 @@ class JDMPatternEngine extends Controller
 //        $y = "sport";
 //        $p = "r_has_part";
 //        $y = "écaille";
-
-        $x = "plage";
-        $p = 'r_associated';
+//        $x = "plage";
+//        $p = 'r_associated';
 //        $y = 'sable';
-        $y = 'mur';
-
+//        $y = 'mur';
 //        $p = "r_has_part";
 //        $y = "queue";
+        $x = $worda;
+        $p = $relation;
+        $y = $wordb;
 
         $wp       = $RelationType->getRelation( $p );
-        $wx       = $Word->where( 'n', $x )->first();
-        $wy       = $Word->where( 'n', $y )->first();
+        $wx       = $Word->getWord( $x );
+        $wy       = $Word->getWord( $y );
         $question = new Term( $wp->_id );
         $question->addAtom( new Atom( 'n1', $wx->_id ), new Atom( 'n2', $wy->_id ) );
 
         if ( $wx === null || $wy === null || $wp === null )
-            return null;
+            return [];
 
         $info = new Infos( $db, $Relation );
         $ret  = $fchecking->ask( $question, $info );
-        $this->printResult( $ret );
+
+        if ( $r->query( 'print', false ) )
+        {
+            ob_start();
+            $this->printResult( $ret );
+            return ob_get_clean();
+        }
+        return $ret;
     }
 
-    private function printResult( $ret )
+    public function printResult( $ret )
     {
         foreach ( $ret as $res )
         {
             $rule   = $res['rule'];
             $bind   = $res['bind'];
             $result = $res['result'];
-            $asks   = $res['asks'];
+            $asks   = $res['asks'] ?? [];
 
             if ( null !== ( $rule ) )
                 $this->makeRulesWithWords( $rule );

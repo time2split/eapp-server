@@ -7,6 +7,11 @@
         component: "show-welcome", //Le composant principal utilisé
         htmlTitle: null,
         wordsData: {}, //Infos à stocker sur un mot (relations ...)
+        app: {
+            direction: null,
+            action: null,
+            args: null
+        },
         config: {
             show_word: {
                 per_page: 200,
@@ -53,8 +58,14 @@
 
                 if (e.state) {
 //                console.log(e.state);
-                    shared.word = e.state.word;
-                    shared.relation = e.state.relation;
+
+                    if (e.state.app)
+                    {
+                        shared.app = e.state.app;
+                    } else {
+                        shared.word = e.state.word;
+                        shared.relation = e.state.relation;
+                    }
                 }
             },
 

@@ -13,6 +13,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#" @click="loadComponent('show-relations',$event)">Relations</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" @click="loadComponent('pattern-engine',$event)">Inférences</a>
+                    </li>
                 </ul>
             </div>
 
@@ -29,17 +32,19 @@
 </template>
 <script>
     import { HUB } from '../vue/data.js';
-    
     export default {
         components: {
             'nav-search': require('./search.vue'),
             'show-welcome': require('./show_welcome.vue'),
             'show-word': require('./show_word.vue'),
-            'show-relations': require('./show_relations.vue')
+            'show-relations': require('./show_relations.vue'),
+            'pattern-engine': require('./pattern_engine/main.vue')
         },
         props: {
             urlword: null,
-            urlwordrelation: null
+            urlwordrelation: null,
+            papp: null,
+            args: null
         },
         data() {
             return HUB.$data.shared;
@@ -69,6 +74,19 @@
                 this.config.relations.exclude = response.data;
             });
 
+            var app = this.papp.split(':', 2);
+
+            if (app.length == 2)
+            {
+                this.app.direction = app[0];
+                this.app.action = app[1];
+                
+                if (this.args instanceof String)
+                    this.app.args = this.args.split('/');
+                
+                //TODO : mettre en externe la gestion du chargement de service particulier
+                this.loadComponent('pattern-engine');
+            }
             if (this.urlwordrelation != '')
                 this.relation = this.urlwordrelation;
 

@@ -29,7 +29,7 @@ class Word extends Controller
             $w    = $this->dbWord->find( (int) $word );
             $word = $w->n;
         }
-        return view( 'welcome', ['word' => $word, 'word_relation' => $relation] );
+        return view( 'welcome', ['word' => $word, 'word_relation' => $relation, 'app' => null] );
     }
 
     private function getWord( string $word )
@@ -53,30 +53,6 @@ class Word extends Controller
         if ( !isset( $wa['nf'] ) )
             $wa['nf'] = $wa['n'];
 
-//        $name = $wa['n'];
-//        preg_match_all( "#>(\d+)#", $name, $matches );
-//
-//        if ( empty( $matches[1] ) )
-//        {
-//            $wa['N'] = $name;
-//        }
-//        else
-//        {
-//            $replacements = [];
-//
-//            foreach ( $matches[1] as $match )
-//            {
-//                $tmp = $this->get( $match );
-//
-//                if ( empty( $tmp ) )
-//                    $tmp = null;
-//                else
-//                    $tmp = $tmp['word']['N'];
-//
-//                $replacements[] = $tmp;
-//            }
-//            $wa['N'] = preg_replace( array_fill( 0, 2, "#(\d+)#" ), $replacements, $name );
-//        }
         $ret = ['word' => $wa];
         return $ret;
     }
@@ -130,6 +106,12 @@ class Word extends Controller
         return $this->getChildsOrParents( 'n2', $word, $request );
     }
 
+    public function rel_autocomplete( string $word )
+    {
+        $words = $this->dbRelationType->where( 'name', 'like', "$word%" )->orderBy( 'name', 'desc' )->orderBy( '_id' );
+        return $words->get();
+    }
+
     public function autocomplete( string $word )
     {
         $words = $this->dbWord->where( 'n', 'like', "$word%" )->orderBy( 'w', 'desc' )->orderBy( 'n' )->limit( 20 );
@@ -153,6 +135,8 @@ class Word extends Controller
             }
             return $tmp;
         }
+        $rels = $rels->toArray();
+        usort($rels,function($a,$b){ return $a['_id'] - $b['_id'];});
         return $rels;
     }
 }

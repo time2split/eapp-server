@@ -2,7 +2,7 @@
     <section>
         <div v-if="word" class="panel panel-default">
             <div class="panel-heading">
-                <h1 v-if="wdata">{{ wdata.nf }}</h1>
+                <h1 v-if="wdata">{{ wdata.nf }} <span v-if="rdata">({{ rdata.name }})</span></h1>
                 <h1 v-else>{{ word }}</h1>
             </div>
             <show-word-config></show-word-config>
@@ -208,8 +208,8 @@
             },
             setHtmlTitle() {
                 var title = HUB.$data.shared.htmlTitle;
-                
-                if(this.wdata == null)
+
+                if (this.wdata == null)
                     return;
 
                 if (this.relation === null)
@@ -218,7 +218,7 @@
                 } else
                 {
 
-                    title = title + ' - ' + this.wdata.nf + ' : ' + this.rdata.name;
+                    title = title + ' - ' + this.wdata.nf + ' (' + this.rdata.name + ')';
                 }
                 $('title').text(title);
             },
@@ -269,6 +269,7 @@
                         }
                     }
                 }
+                this.rdata = null;
 
                 if (this.relation !== null)
                 {
@@ -280,7 +281,7 @@
                             break;
                         }
                     }
-                    
+
                     this.fillCounts_options = {relations: [this.rdata]};
                     {
                         let options = {

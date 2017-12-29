@@ -14,129 +14,139 @@ class Word extends Controller
     private $dbRelationType;
     private $relPagination;
 
-    public function __construct( DBWord $dbWord, DBRelation $dbRelation, DBRelationType $dbRelationType )
+    public function __construct(DBWord $dbWord, DBRelation $dbRelation, DBRelationType $dbRelationType)
     {
         $this->dbWord         = $dbWord;
         $this->dbRelation     = $dbRelation;
         $this->dbRelationType = $dbRelationType;
-        $this->relPagination  = config( 'app.pagination.relations', config( 'app.pagination.default', 20 ) );
+        $this->relPagination  = config('app.pagination.relations', config('app.pagination.default', 20));
     }
 
-    public function app( string $word = null, string $relation = null )
+    public function app(string $word = null, string $relation = null)
     {
-        if ( is_numeric( $word ) )
-        {
-            $w    = $this->dbWord->find( (int) $word );
+        if (is_numeric($word)) {
+            $w    = $this->dbWord->find((int) $word);
             $word = $w->n;
         }
-        return view( 'welcome', ['word' => $word, 'word_relation' => $relation, 'app' => null] );
+        return view('welcome', ['word' => $word, 'word_relation' => $relation, 'app' => null]);
     }
 
-    private function getWord( string $word )
+    private function getWord(string $word)
     {
-        if ( is_numeric( $word ) )
-            $w = $this->dbWord->find( (int) $word );
+        if (is_numeric($word))
+            $w = $this->dbWord->find((int) $word);
         else
-            $w = $this->dbWord->where( 'n', $word )->first();
+            $w = $this->dbWord->where('n', $word)->first();
         return $w;
     }
 
-    public function get( string $word )
+    public function get(string $word)
     {
-        $w = $this->getWord( $word );
+        $w = $this->getWord($word);
 
-        if ( empty( $w ) )
+        if (empty($w))
             return [];
 
         $wa = $w->toArray();
 
-        if ( !isset( $wa['nf'] ) )
+        if (!isset($wa['nf']))
             $wa['nf'] = $wa['n'];
 
         $ret = ['word' => $wa];
         return $ret;
     }
 
-    public function getWords( Request $request )
+    public function getWords(Request $request)
     {
-        $words = $request->query( 'words', '' );
-        $words = explode( ',', $words );
+        $words = $request->query('words', '');
+        $words = explode(',', $words);
         $ret   = [];
 
-        foreach ( $words as $w )
-        {
-            $ret[] = $this->get( $w )['word'] ?? [];
+        foreach ($words as $w) {
+            $ret[] = $this->get($w)['word'] ?? [];
         }
         return $ret;
     }
 
-    private function getChildsOrParents( string $what, string $word, Request $request )
+    private function getChildsOrParents(string $what, string $word, Request $request)
     {
-        $w        = $this->getWord( $word );
-        $rel      = $request->query( 'rtid', null );
-        $per_page = $request->query( 'per_page', $this->relPagination );
-        $count    = $request->query( 'count', null );
+        $w        = $this->getWord($word);
+        $rel      = $request->query('rtid', null);
+        $per_page = $request->query('per_page', $this->relPagination);
+        $count    = $request->query('count', null);
 
-        if ( $count === null )
+        if ($count === null)
             $count = false;
         else
             $count = $count !== 'false';
 
-        if ( empty( $w ) )
+        if (empty($w))
             return [];
 
-        $relations = $this->dbRelation->where( $what, $w->_id );
+        $relations = $this->dbRelation->where($what, $w->_id);
 
-        if ( $rel !== null )
-            $relations->where( 't', (int) $rel );
+        if ($rel !== null)
+            $relations->where('t', (int) $rel);
 
-        if ( $count )
+        if ($count)
             return $relations->count();
         else
-            return $relations->simplePaginate( (int) $per_page );
+            return $relations->simplePaginate((int) $per_page);
     }
 
-    public function getChilds( string $word, Request $request )
+    public function getChilds(string $word, Request $request)
     {
-        return $this->getChildsOrParents( 'n1', $word, $request );
+        return $this->getChildsOrParents('n1', $word, $request);
     }
 
-    public function getParents( string $word, Request $request )
+    public function getParents(string $word, Request $request)
     {
-        return $this->getChildsOrParents( 'n2', $word, $request );
+        return $this->getChildsOrParents('n2', $word, $request);
     }
 
-    public function rel_autocomplete( string $word )
+    public function rel_autocomplete(string $word)
     {
-        $words = $this->dbRelationType->where( 'name', 'like', "$word%" )->orderBy( 'name', 'desc' )->orderBy( '_id' );
+        $words = $this->dbRelationType->where('name', 'like', "$word%")->orderBy('name', 'desc')->orderBy('_id');
         return $words->get();
     }
 
-    public function autocomplete( string $word )
+    public function autocomplete(Request $request, string $relation)
     {
-        $words = $this->dbWord->where( 'n', 'like', "$word%" )->orderBy( 'w', 'desc' )->orderBy( 'n' )->limit( 20 );
+        $words = $this->dbWord->where('n', 'like', "$relation%")->orderBy('w', 'desc');
+
+        if (($nb = $request->query('nb', 20)) >= 0) {
+
+            if ($nb === 0)
+                return [];
+
+            $words = $words->limit((int) $nb);
+        }
+
+        if (($order = $request->query('order', 'nf'))) {
+            $words = $words->orderBy($order);
+        }
         return $words->get();
     }
 
-    public function relationTypes( Request $request )
+    public function relationTypes(Request $request)
     {
-        $get      = $request->query( 'get' );
+        $get      = $request->query('get');
         $rels     = $this->dbRelationType->all();
         $excluded = $get === 'excluded';
 
-        if ( $excluded )
-        {
+        if ($excluded) {
             $tmp = [];
 
-            foreach ( $rels as $r )
-            {
-                if ( in_array( $r->name, ['r_chunk_sujet', 'r_chunck_objet', 'r_flpot'] ) || $r->info === '' || strpos( $r->info, '(interne)' ) === 0 )
+            foreach ($rels as $r) {
+                if (in_array($r->name, ['r_chunk_sujet', 'r_chunck_objet', 'r_flpot']) || $r->info === '' || strpos($r->info, '(interne)') === 0)
                     $tmp[] = $r;
             }
             return $tmp;
         }
         $rels = $rels->toArray();
-        usort($rels,function($a,$b){ return $a['_id'] - $b['_id'];});
+        usort($rels, function($a, $b) {
+            return $a['_id'] - $b['_id'];
+        });
         return $rels;
     }
 }

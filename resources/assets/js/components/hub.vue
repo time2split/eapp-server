@@ -51,6 +51,13 @@
         },
         methods: {
             //==================================================================
+            //HTML
+            //==================================================================
+            getImgLoader()
+            {
+                return '<img src="http://127.0.0.1:8000/images/ajax-loader.gif">';
+            },
+            //==================================================================
             //HISTORIQUE
             //==================================================================
             popstate(e) {
@@ -98,8 +105,9 @@
                 var data = this.$data.shared;
                 history.pushState(data, shared.relation, encodeURI("/" + shared.word + '/' + shared.relation));
             },
-            changeWord(word)
+            changeWord(e)
             {
+                var word = $(e.target).find('input').val();
                 shared.relation = null;
 
                 if (shared.word == word)

@@ -9,9 +9,26 @@ class Word extends \Moloquent
     protected $primaryKey = '_id';
     public $timestamps    = false;
 
-    function getWord( $word )
+//    public function __construct($attrs = [])
+//    {
+//        parent::__construct($attrs);
+//        
+//        if (!isset($this->nf))
+//            $this->nf = $this->n;
+//    }
+    
+//    static function makes($data)
+//    {
+//        if(data instanceof self)
+//        {
+//            if (!isset($this->nf))
+//                $this->nf = $this->n;
+//        }
+//    }
+
+    function getWord($word)
     {
         $k = is_numeric($word) ? '_id' : 'n';
-        return $this->where( $k, $word )->get()->first();
+        return $this->where($k, $word)->get()->first();
     }
 }

@@ -59,6 +59,6 @@ class Database
         if ( empty( $res ) )
             return false;
 
-        return $res;
+        return array_values($res);
     }
 }

@@ -13,17 +13,16 @@ class Term
     private $atoms = [];
     private $weight;
 
-    public function __construct( $p, int $w = 0, Atom ...$atoms )
+    public function __construct($p, int $w = 0, Atom ...$atoms)
     {
         $this->predicate = $p;
-        $this->addAtom( ...$atoms );
-        $this->setWeight( $w );
+        $this->addAtom(...$atoms);
+        $this->setWeight($w);
     }
 
     public function __clone()
     {
-        foreach ( $this->atoms as &$atom )
-        {
+        foreach ($this->atoms as &$atom) {
             $atom = clone $atom;
         }
     }
@@ -33,7 +32,7 @@ class Term
         return $this->weight;
     }
 
-    public function setWeight( int $w )
+    public function setWeight(int $w)
     {
         $this->weight = $w;
     }
@@ -43,14 +42,14 @@ class Term
         return $this->predicate;
     }
 
-    public function setPredicate( $p )
+    public function setPredicate($p)
     {
         $this->predicate = $p;
     }
 
-    public function addAtom( Atom ... $atoms )
+    public function addAtom(Atom ... $atoms)
     {
-        $this->atoms = array_merge( $this->atoms, $atoms );
+        $this->atoms = array_merge($this->atoms, $atoms);
     }
 
     public function getAtoms()
@@ -58,12 +57,12 @@ class Term
         return $this->atoms;
     }
 
-    public function getAtom( int $i = 0 )
+    public function getAtom(int $i = 0)
     {
         return $this->atoms[$i];
     }
 
-    public function setAtom( int $i = 0, Atom $atom )
+    public function setAtom(int $i = 0, Atom $atom)
     {
         return $this->atoms[$i] = $atom;
     }
@@ -74,23 +73,21 @@ class Term
      * @param bool $strict
      * @return type
      */
-    public function getAtomPos( Atom $a, bool $strict = true )
+    public function getAtomPos(Atom $a, bool $strict = true)
     {
         $ret = [];
 
-        foreach ( $this->atoms as $k => $atom )
-        {
-            if ( ($strict && $atom === $a) || (!$strict && $atom == $a) )
-            {
+        foreach ($this->atoms as $k => $atom) {
+            if (($strict && $atom === $a) || (!$strict && $atom == $a)) {
                 $ret[] = $k;
             }
         }
         return $ret;
     }
 
-    public function variableMatch( Term $b )
+    public function variableMatch(Term $b)
     {
-        return self::variableMatch_( $this, $b );
+        return self::variableMatch_($this, $b);
     }
 
     /**
@@ -98,24 +95,22 @@ class Term
      * @param \App\JDMPatternEngine\Term $a
      * @param \App\JDMPatternEngine\Term $b
      */
-    static public function variableMatch_( Term $a, Term $b )
+    static public function variableMatch_(Term $a, Term $b)
     {
         $aas = $a->getAtoms();
         $bas = $b->getAtoms();
 
-        if ( ($c = count( $aas )) !== count( $bas ) )
+        if (($c = count($aas)) !== count($bas))
             return false;
 
-        for ( $i = 0; $i < $c; $i++ )
-        {
+        for ($i = 0; $i < $c; $i++) {
             $aa = $aas[$i];
             $ba = $bas[$i];
 
-            if ( $aa->isVariable() )
+            if ($aa->isVariable())
                 ;
-            elseif ( $ba->isConstant() )
-            {
-                if ( $ba->getValue() !== $aa->getValue() )
+            elseif ($ba->isConstant()) {
+                if ($ba->getValue() !== $aa->getValue())
                     return false;
             }
             else
@@ -147,19 +142,18 @@ class Term
 //            return $bv == $tv;
 //        }
 //    }
-//    static public function sameAtoms( Term $a, Term $b )
+//    static public function sameAtoms(Term $a, Term $b)
 //    {
 //        $aas = $a->getAtoms();
 //        $bas = $b->getAtoms();
 //
-//        if ( count( $aas ) != count( $bas ) )
+//        if (count($aas) != count($bas))
 //            return false;
 //
-//        foreach ( $aas as $k => $aa )
-//        {
+//        foreach ($aas as $k => $aa) {
 //            $ba = $bas[$k];
 //
-//            if ( $aa != $ba )
+//            if ($aa != $ba)
 //                return false;
 //        }
 //        return true;
@@ -171,27 +165,46 @@ class Term
      * @param \App\JDMPatternEngine\Term $b
      * @return type
      */
-//    static public function sameNature( Term $a, Term $b )
+//    static public function sameNature(Term $a, Term $b)
 //    {
-//        return $a->getPredicate() === $b->getPredicate() && self::sameAtoms( $a, $b );
+//        return $a->getPredicate() === $b->getPredicate() && self::sameAtoms($a, $b);
 //    }
+
+    /**
+     * Comparaison sans le poids (weight)
+     * @param \App\JDMPatternEngine\Term $a
+     * @param \App\JDMPatternEngine\Term $b
+     * @return type
+     */
+    static public function sameValue(Term $a, Term $b)
+    {
+        $c = count($a->getAtoms());
+        
+        if($c != count($b->getAtoms()))
+            return false;
+        
+        for ($i = 0 ; $i < $c ; $i++) {
+            
+            if ($a->getAtom($i)->getValue() !== $b->getAtom($i)->getValue())
+                return false;
+        }
+        return true;
+    }
 
     public function getVariables()
     {
         $ret = [];
-        foreach ( $this->atoms as $i => $atom )
-        {
-            if ( $atom->isVariable() )
+        foreach ($this->atoms as $i => $atom) {
+            if ($atom->isVariable())
                 $ret[$i] = $atom;
         }
         return $ret;
     }
 
-    public function hasVariable( $varName )
+    public function hasVariable($varName)
     {
-        foreach ( $this->atoms as $i => $atom )
-        {
-            if ( $atom->isVariable() && $atom->getName() == $varName )
+        foreach ($this->atoms as $i => $atom) {
+            if ($atom->isVariable() && $atom->getName() == $varName)
                 return true;
         }
         return false;
@@ -200,9 +213,8 @@ class Term
     public function getConstants()
     {
         $ret = [];
-        foreach ( $this->atoms as $i => $atom )
-        {
-            if ( $atom->isConstant() )
+        foreach ($this->atoms as $i => $atom) {
+            if ($atom->isConstant())
                 $ret[$i] = $atom;
         }
         return $ret;
@@ -214,11 +226,10 @@ class Term
         $ret = "$this->predicate$w(";
         $tmp = [];
 
-        foreach ( $this->atoms as $atom )
-        {
+        foreach ($this->atoms as $atom) {
             $tmp[] = (string) $atom;
         }
-        $ret .= implode( ',', $tmp );
+        $ret .= implode(',', $tmp);
         $ret .= ")";
         return $ret;
     }

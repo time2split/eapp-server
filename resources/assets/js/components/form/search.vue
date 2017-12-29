@@ -1,9 +1,6 @@
 <template>
-
-    <!--<div class="form-group">-->
     <span>
         <input type="search" class="input-sm form-control" v-bind:placeholder="placeholder">
-        <!--        <button type="submit" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-eye-open"></span> Chercher</button>-->
     </span>
 </template>
 <script>
@@ -31,6 +28,7 @@
                 var input = form.find("input");
                 var default_config = {
                     getValue: 'n',
+                    requestDelay: 300,
                     url: function (word) {
                         return component.url.replace('$', word);
                     },
@@ -49,6 +47,7 @@
                         type: "custom",
                         method(value, item)
                         {
+                            var value = item.nf ? item.nf : item.n;
                             return value + ' <span class="badge badge-info">' + item.w + '</span>';
                         }
                     }

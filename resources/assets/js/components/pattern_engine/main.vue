@@ -23,7 +23,8 @@
                             return value;
                         }
                     }
-                }
+                },
+                httpToken: null
             }
         },
         components: {
@@ -44,15 +45,22 @@
             },
             onSubmit(e)
             {
-                console.log($('#w1 input').val());
+//                console.log($('#w1 input').val());
                 var w1 = $('#w1 input').val();
                 var w2 = $('#w2 input').val();
                 var r = $('#relation input').val();
 
-                HUB.addHttpRequest('/@jdmpattern/' + w1 + '/' + r + '/' + w2 + '?print=1', (response) => {
+                if (this.httpToken != null){
+                    this.httpToken.cancel();
+                }
+                $('#result').html(HUB.getImgLoader());
+
+                this.httpToken = HUB.addHttpRequest('/@jdmpattern/' + w1 + '/' + r + '/' + w2 + '?print=1', (response) => {
 //                    this.relationTypes = response.data;
 //                    console.log(response.data);
-                    $('#result').html(JSON.stringify(response.data));
+                    $('#result').html(response.data);
+                }, (error) => {
+                    $('#result').html(error);
                 });
             }
         }

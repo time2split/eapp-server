@@ -2,7 +2,7 @@
     <div class="container-fluid">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
 
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="nav navbar-left" id="navbarNav">
                 <ul class="nav navbar-nav mr-auto">
                     <li>
                         <a class="nav-link" href="#" @click="loadComponent('show-welcome',$event)">Accueil</a>
@@ -19,11 +19,16 @@
                 </ul>
             </div>
 
-            <div class="container-fluid">
-                <div class="row">
-                    <nav-search @submit="changeWord" url="/@word/$/autocomplete"></nav-search>
+            <!--<div class="container-fluid">-->
+            <!--<div class="row">-->
+            <form class="navbar navbar-form navbar-right inline-form"  @submit="changeWord" @submit.prevent="onSubmitPrevent">
+                <div class="form-group">
+                    <nav-search url="/@word/$/autocomplete" placeholder="Recherche"></nav-search>
+                    <button type="submit" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-eye-open"></span> Chercher</button>
                 </div>
-            </div>
+            </form>
+            <!--</div>-->
+            <!--</div>-->
         </nav>
         <div v-if="relationTypes">
             <component v-bind:is="component" :config="config" :userConfig="userConfig" :showRelations="showRelations" :relationTypes="relationTypes" :wordsData="wordsData" :word="word" :relation="relation" :words="words"></component>
@@ -34,7 +39,7 @@
     import { HUB } from '../vue/data.js';
     export default {
         components: {
-            'nav-search': require('./search.vue'),
+            'nav-search': require('./form/search.vue'),
             'show-welcome': require('./show_welcome.vue'),
             'show-word': require('./show_word.vue'),
             'show-relations': require('./show_relations.vue'),
@@ -80,10 +85,10 @@
             {
                 this.app.direction = app[0];
                 this.app.action = app[1];
-                
+
                 if (this.args instanceof String)
                     this.app.args = this.args.split('/');
-                
+
                 //TODO : mettre en externe la gestion du chargement de service particulier
                 this.loadComponent('pattern-engine');
             }
@@ -112,8 +117,12 @@
             loadWordPage: function ()
             {
                 this.component = 'show-word';
-            }
-            , changeWord: HUB.changeWord
+            },
+            onSubmitPrevent(e)
+            {
+                e.preventDefault();
+            },
+            changeWord: HUB.changeWord
         }
     };
 </script>

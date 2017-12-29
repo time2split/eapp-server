@@ -15,7 +15,7 @@ Route::get( '@word/{word}', 'Word@get' );
 Route::get( '@word/{word}/childs', 'Word@getChilds' );
 Route::get( '@word/{word}/parents', 'Word@getParents' );
 Route::get( '@word/{word}/autocomplete', 'Word@autocomplete' );
-Route::get( '@word/{word}/rel_autocomplete', 'Word@rel_autocomplete' );
+Route::get( '@word/{relation}/rel_autocomplete', 'Word@rel_autocomplete' );
 
 Route::get( '@get/relationTypes', 'Word@relationTypes' );
 Route::get( '@get/words', 'Word@getWords' );

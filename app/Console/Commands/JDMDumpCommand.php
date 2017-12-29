@@ -3,8 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
-use MongoDB\Client;
 
 class JDMDumpCommand extends Command
 {

@@ -1,40 +1,53 @@
 <template>
-    <section>
+    <section class="container-fluid">
         <div v-if="word" class="panel panel-default">
             <div class="panel-heading">
                 <h1 v-if="wdata">{{ wdata.nf }} <span v-if="rdata">({{ rdata.name }})</span></h1>
                 <h1 v-else>{{ word }}</h1>
             </div>
-            <show-word-config></show-word-config>
+
             <div class="panel-body">
-                <dl v-if="wdata" class="dl-horizontal">
-                    <dt>Poids</dt>
-                    <dd><span class="badge">{{ wdata.w }}</span></dd>
-                    <dt>Identifiant</dt>
-                    <dd><span class="badge badge-info">{{ wdata._id }}</span></dd>
-                </dl>
-                <div v-else="" class="alert alert-info">Le mot n'est pas présent dans la base de données</div>
+
+                <div class="row">
+                    <div v-if="wdata" class="col-md-3">
+                        <dl class="dl-horizontal">
+                            <dt>Poids</dt>
+                            <dd><span class="badge">{{ wdata.w }}</span></dd>
+                            <dt>Identifiant</dt>
+                            <dd><span class="badge badge-info">{{ wdata._id }}</span></dd>
+                        </dl>
+                    </div>
+                    <div v-else="" class="alert alert-info">Le mot n'est pas présent dans la base de données</div>
+
+                    <show-word-config class="col-md-4" :relation="relation"></show-word-config>
+                </div>
                 <div v-if="relations">
                     <div v-if="relation">
-                        <show-word-relation :word="word" :words="words" :rdata="rdata" :relations="relations[rdata._id]" :showType="['OUT','IN']"></show-word-relation>
+                        <a class="lead" href="#" @click="changeRelation(null)" @click.prenvent="onEventPrevent">
+                            <span class="glyphicon glyphicon-eye-open" ></span> Voir toutes les relations
+                        </a>
+                        <show-word-relation :word="word" :words="words" :rdata="rdata" :relations="relations[rdata._id]" :showType="['OUT','IN']" @changeWord="changeWord" @changeRelation="changeRelation"></show-word-relation>
                     </div>
                     <div v-else v-for="relation in showRelations">
-                        <show-word-relation :word="word" :words="words" :rdata="relation" :relations="relations[relation._id]" :showType="['OUT','IN']"></show-word-relation>
+                        <show-word-relation :word="word" :words="words" :rdata="relation" :relations="relations[relation._id]" :showType="['OUT','IN']" @changeWord="changeWord" @changeRelation="changeRelation"></show-word-relation>
                     </div>
                 </div>
             </div>
+
         </div>
     </section>
 </template>
 <script>
     import { HUB } from '../vue/data.js';
     export default{
-        props: ['word', 'relation', 'showRelations', 'config', 'words', 'wordsData', 'userConfig'],
+        props: ['showRelations', 'config', 'words',
+            'wordsData', 'userConfig'],
         components: {
             'show-word-relation': require('./show_word_relation.vue'),
             'show-word-config': require('./show_word_config.vue')
         },
-        data() {
+        data()
+        {
             return {
                 pages: 0, //nombres de pages parcourues
                 doonce_counts: false,
@@ -42,7 +55,13 @@
                 wdata: null,
                 rdata: null,
                 relations: null,
-                cancelToken: []
+                cancelToken: {
+                    word: null,
+                    words: []
+                },
+                myapp: null,
+                word: null,
+                relation: null
             };
         },
 //        computed: {
@@ -58,43 +77,75 @@
 //                return ret;
 //            }
 //        },
-        created() {
+        created()
+        {
             this.changeTheWord();
 
 //            if (this.relation)
 //                this.changeTheRelation();
 
             this.$watch('pages', this.changePages);
-            this.$watch('word', this.changeTheWord);
-            this.$watch('relation', this.changeTheWord);
+//            this.$watch('word', this.changeTheWord);
+//            this.$watch('relation', this.changeTheWord);
             this.$watch('userConfig.sort_type', this.resort)
             this.$watch('rdata', this.setHtmlTitle);
             this.$watch('wdata', this.setHtmlTitle);
             HUB.$watch('wordComputed', this.resort);
+            HUB.$watch('shared.app', this.changeTheWord);
         },
-        destroyed() {
-            this.cancelTokens();
+        destroyed()
+        {
+            this.cancelTokensWords();
+            this.cancelTokenWord();
+            $('title').text(HUB.$data.shared.htmlTitle);
         },
         methods: {
+            onEventPrevent: HUB.onEventPrevent,
+            setHtmlTitle()
+            {
+                var title = HUB.$data.shared.htmlTitle;
+
+                if (this.wdata === null)
+                    return;
+
+                if (this.relation === null) {
+                    title = title + ' - ' + this.wdata.nf;
+                }
+                else {
+                    title = title + ' - ' + this.wdata.nf + ' (' + this.rdata.name + ')';
+                }
+                $('title').text(title);
+            },
+            changeWord(word)
+            {
+                this.$emit('changeWord', word);
+            },
+            changeRelation(relation)
+            {
+                this.$emit('changeRelation', relation);
+            },
             resort()
             {
                 this.sortRelations();
             },
-            sortRelations(rtypes = ['IN', 'OUT']) {
+            sortRelations(rtypes = ['IN', 'OUT'])
+            {
                 var type = HUB.shared.userConfig.sort_type;
                 var fsort = null;
 
                 switch (type)
                 {
                     case 'weight':
-                        fsort = () => function (a, b) {
+                        fsort = () => function (a, b)
+                            {
                                 return b.w - a.w;
                             }
                         ;
                         break;
 
                     case 'alpha':
-                        fsort = (what) => function (a, b) {
+                        fsort = (what) => function (a, b)
+                            {
                                 var k = what == 'IN' ? 'n1' : 'n2';
                                 var wa = HUB.getWord(a[k]);
                                 var wb = HUB.getWord(b[k]);
@@ -110,24 +161,33 @@
                         return;
                 }
 
-                for (var rid in this.relations)
-                {
+                for (var rid in this.relations) {
                     var rel = this.relations[rid];
 
                     for (var rtype of rtypes)
                         rel[rtype].data.sort(fsort(rtype));
             }
             },
-            cancelTokens() {
+            cancelTokenWord()
+            {
+                if (this.cancelToken.word === null)
+                    return;
 
-                for (var tok of this.cancelToken)
-                {
+                this.cancelToken.word.cancel();
+                this.cancelToken.word = null;
+            },
+            cancelTokensWords()
+            {
+                for (var tok of this.cancelToken.words) {
                     tok.cancel();
                 }
+                this.cancelToken.words = [];
             },
-            initRelations() {
+            initRelations()
+            {
                 var ret = {};
                 var rel;
+                this.cancelTokensWords();
 
                 for (rel of this.showRelations)
                 {
@@ -138,8 +198,8 @@
                 }
                 this.relations = ret;
             },
-            changePages() {
-
+            changePages()
+            {
                 if (this.doonce_counts)
                     return;
 
@@ -151,7 +211,8 @@
                     this.fillCountRelations(this.fillCounts_options);
                 }
             },
-            fillRelations(page = 1, options = {}) {
+            fillRelations(page = 1, options =
+            {}) {
                 var per_page = options.per_page ? options.per_page : this.config.show_word.per_page;
                 var max_page = options.max_page ? options.max_page : this.config.show_word.max_page;
                 var type_rel = options.type_rel ? options.type_rel : 'OUT';
@@ -162,13 +223,12 @@
                 var token = HUB.addHttpRequest(url, (response) => {
                     var rels = response.data.data;
 
-                    if (rels.length == 0)
+                    if (rels.length === 0)
                         rels = null;
                     else {
                         this.pages++;
 
-                        if (max_page === true || page < max_page)
-                        {
+                        if (max_page === true || page < max_page) {
                             if (page > -1)
                                 page++;
 
@@ -177,8 +237,7 @@
                         }
                         var ret = this.relations;
 
-                        for (let rel of rels)
-                        {
+                        for (let rel of rels) {
                             var key = rel.t;
                             if (ret[key] === undefined)
                                 continue;
@@ -189,94 +248,84 @@
                         this.sortRelations([type_rel]);
                     }
                 });
-                this.cancelToken.push(token);
+                this.cancelToken.words.push(token);
             },
-            fillCountRelations(options = {}){
+            fillCountRelations(options =
+            {}){
                 var relations = options.relations ? options.relations : this.relationTypes;
 
-                for (let rel of relations)
-                {
+                for (let rel of relations) {
                     var tok1 = HUB.addHttpRequest('/@word/' + this.word + '/childs?count=true&rtid=' + rel._id, (response) => {
                         this.relations[rel._id].OUT.count = response.data;
                     });
                     var tok2 = HUB.addHttpRequest('/@word/' + this.word + '/parents?count=true&rtid=' + rel._id, (response) => {
                         this.relations[rel._id].IN.count = response.data;
                     });
-                    this.cancelToken.push(tok1);
-                    this.cancelToken.push(tok2);
+                    this.cancelToken.words.push(tok1);
+                    this.cancelToken.words.push(tok2);
             }
             },
-            setHtmlTitle() {
-                var title = HUB.$data.shared.htmlTitle;
-
-                if (this.wdata == null)
-                    return;
-
-                if (this.relation === null)
-                {
-                    title = title + ' - ' + this.wdata.nf;
-                } else
-                {
-
-                    title = title + ' - ' + this.wdata.nf + ' (' + this.rdata.name + ')';
-                }
-                $('title').text(title);
-            },
-            changeTheWord() {
+            changeTheWord()
+            {
+//                console.log('change The Word !!')
                 this.doonce_counts = false;
                 this.pages = 0;
                 this.fillCounts_options = {};
 
-//                console.log(this.word)
-//                console.log(this.relation)
+                var myapp = this.myapp;
+                var curapp = HUB.$data.shared.app;
 
-//                if (this.wordsData[this.word])
-//                {
-//                    var data = JSON.parse(this.wordsData[this.word]);
-//                    this.relations = data.relations;
-//                    this.wdata = data.wdata;
-//                    console.log(data);
-//                } else
-                {
-                    this.wdata = null;
+                if (myapp === curapp)
+                    return;
 
-                    var tok = HUB.addHttpRequest('/@word/' + this.word, (response) => {
-                        this.wdata = response.data.word;
-//                        HUB.$data.shared.wdata = this.wdata;
-//                        Vue.set(this.wordsData, this.word, JSON.stringify(this.$data));
-//                        console.log(this.wdata);
-                    });
-                    this.cancelToken.push(tok);
+                this.word = curapp.data.word;
+                this.relation = curapp.data.relation;
 
-                    if (this.relation === null)
-                    {
-                        this.doonce_counts = true;
-                        this.initRelations();
-                        {
-                            let options = {
-                                url: "/@word/" + this.word + "/childs?",
-                                type_rel: 'OUT'
-                            };
-                            this.initRelations();
-                            this.fillRelations(1, options);
-                        }
-                        {
-                            let options = {
-                                url: "/@word/" + this.word + "/parents?",
-                                type_rel: 'IN'
-                            };
-                            this.fillRelations(1, options);
-                        }
-                    }
-                }
+                if (this.word === undefined)
+                    this.word = null;
+
+                if (this.relation === undefined)
+                    this.relation = null;
+
+//                console.log(this.word + ' ' + this.relation)
+
+                if (this.word === null)
+                    return;
+
+                this.wdata = null;
+
+                this.cancelTokenWord();
+
+                var tok = HUB.addHttpRequest('/@word/' + this.word, (response) => {
+                    this.wdata = response.data.word;
+                });
+                this.cancelToken.word = tok;
+
                 this.rdata = null;
 
-                if (this.relation !== null)
-                {
-                    for (let rel of this.showRelations)
+                if (this.relation === null) {
+                    this.doonce_counts = true;
+                    this.initRelations();
                     {
-                        if (rel.name === this.relation)
-                        {
+                        let options = {
+                            url: "/@word/" + this.word + "/childs?",
+                            type_rel: 'OUT'
+                        };
+                        this.initRelations();
+                        this.fillRelations(1, options);
+                    }
+                    {
+                        let options = {
+                            url: "/@word/" + this.word + "/parents?",
+                            type_rel: 'IN'
+                        };
+                        this.fillRelations(1, options);
+                    }
+                }
+                else { //if (this.relation !== null) {
+                    for (let rel of this.showRelations) {
+
+                        if (rel.name === this.relation) {
                             this.rdata = rel;
                             break;
                         }
@@ -301,46 +350,7 @@
                         this.fillRelations(1, options);
                     }
                 }
-            },
-//            changeTheRelation()
-//            {
-//                this.cancelTokens();
-//                console.log('this.relation');
-//                console.log(this.relation);
-//
-//                if (this.relation === null)
-//                {
-//                    this.changeTheWord();
-//                    return;
-//                }
-//
-//                for (let rel of this.relationTypes)
-//                {
-//                    if (rel.name === this.relation)
-//                    {
-//                        this.rdata = rel;
-//                        break;
-//                    }
-//                }
-//                this.fillCountRelations({relations: [this.rdata]});
-//                {
-//                    let options = {
-//                        url: "/@word/" + this.word + "/childs?rtid=" + this.rdata._id + '&',
-//                        type_rel: 'OUT',
-//                        max_page: true
-//                    };
-//                    this.initRelations();
-//                    this.fillRelations(1, options);
-//                }
-//                {
-//                    let options = {
-//                        url: "/@word/" + this.word + "/parents?rtid=" + this.rdata._id + '&',
-//                        type_rel: 'IN',
-//                        max_page: true
-//                    };
-//                    this.fillRelations(1, options);
-//                }
-//            }
+            }
         }
     };
 </script>

@@ -268,9 +268,32 @@ class FC
                 if (!empty($newVars))
                     $varOrder = array_merge($varOrder, $newVars);
             }
-            
+/// TEST
+//            $data = null;
+//            $a    = time(true);
+//            
+//            while (true) {
+//                $bind = $this->nextBind($varOrder, $domains, $data);
+//                echo 'i';
+//                if ($bind === null)
+//                    break;
+//
+//                $ruleBinded->bind($bind);
+//                foreach ($ruleBinded->getHypotheses() as $k => $hterm) {
+//                    $isOneTerm = in_array($k, $oneVariableTerm);
+//
+////                    if (!$isOneTerm)
+//                    {
+//                        $info->moreData($hterm);
+//                    }
+//                    $ask = $this->directAsk($hterm, $info);
+//                }
+//            }
+//            var_dump(time(true) - $a);
+//            continue;
+
             $data = null;
-            
+
             /**
              * boucle principale
              */
@@ -336,8 +359,8 @@ class FC
                      * Appel récursif
                      */
                     if ($ask === null) {
-                        
-                        if (/*!$isOneTerm && */$info->canDoRecursion()) {
+
+                        if (/* !$isOneTerm && */$info->canDoRecursion()) {
                             $info->depth++;
                             $info->calls++;
                             $ask = $this->ask_($hterm, $info, $localExcludedWords);

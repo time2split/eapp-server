@@ -12,7 +12,8 @@
 <script>
     import { HUB } from '../../vue/data.js';
     export default{
-        data() {
+        data()
+        {
             return {
                 search_config: {
                     getValue: 'name',
@@ -25,39 +26,34 @@
                     }
                 },
                 httpToken: null
-            }
+            };
         },
         components: {
             'search-text': require('../form/search.vue')
         },
-        created()
+        beforeCreate()
         {
-            HUB.$data.shared.app = {
-                direction: '@app:service',
-                action: 'jdmpattern'
-            };
-            history.pushState({app: HUB.$data.shared.app}, null, '/@app:service/jdmpattern');
+            var title = HUB.$data.shared.htmlTitle;
+            $('title').text(title + ' - Moteur d\'inférence');
+        },
+        destroyed()
+        {
+            $('title').text(HUB.$data.shared.htmlTitle);
         },
         methods: {
-            onSubmitPrevent(e)
+            onSubmitPrevent: HUB.onEventPrevent,
+            onSubmit()
             {
-                e.preventDefault();
-            },
-            onSubmit(e)
-            {
-//                console.log($('#w1 input').val());
                 var w1 = $('#w1 input').val();
                 var w2 = $('#w2 input').val();
                 var r = $('#relation input').val();
 
-                if (this.httpToken != null){
+                if (this.httpToken != null) {
                     this.httpToken.cancel();
                 }
-                $('#result').html(HUB.getImgLoader());
+                $('#result').html('chargement');
 
                 this.httpToken = HUB.addHttpRequest('/@jdmpattern/' + w1 + '/' + r + '/' + w2 + '?print=1', (response) => {
-//                    this.relationTypes = response.data;
-//                    console.log(response.data);
                     $('#result').html(response.data);
                 }, (error) => {
                     $('#result').html(error);

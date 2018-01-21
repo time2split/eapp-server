@@ -125,6 +125,13 @@ class Infos extends FCInfos
         });
     }
 
+    private function getValuesOfDomain($domain)
+    {
+        return array_map(function($e) {
+            return $e[0]->getAtoms()[$e['varPos']]->getValue();
+        }, $domain);
+    }
+
     public function selectDomain($domain)
     {
         /*
@@ -136,21 +143,32 @@ class Infos extends FCInfos
                 return ['varPos' => $varPos, $e];
             }, $dom['domain']);
         }
-        $domain = array_merge(...array_column($domain, 'domain'));
+
+        //Intersection si derniere profondeur atteinte
+        if ($this->depth >= $this->conf_depth_max) {
+            $tmp = [];
+            
+            foreach ($domain as $dom) {
+                $tmp[] = $this->getValuesOfDomain($dom['domain']);
+            }
+            $tmp = array_intersect(...$tmp);
+            $domain = array_intersect_key($domain[0]['domain'], $tmp);
+        }
+        else {
+            $domain = array_merge(...array_column($domain, 'domain'));
+        }
         $domain = $this->filterDomain($domain);
 
         usort($domain, function($terma, $termb) {
             return $termb[0]->getWeight() - $terma[0]->getWeight();
         });
         $nbVal = $this->conf_domain_nbValues[$this->depth] ?? $this->conf_domain_nbValues_def;
-        
+
         //Dédoublonnage
-        $tmp = array_map(function($e) {
-            return $e[0]->getAtoms()[$e['varPos']]->getValue();
-        }, $domain);
-        $tmp = array_unique($tmp);
+        $tmp    = $this->getValuesOfDomain($domain);
+        $tmp    = array_unique($tmp);
         $domain = array_intersect_key($domain, $tmp);
-        
+
 
         $positive = array_filter($domain, function($e) {
             return $e[0]->getWeight() >= 0;

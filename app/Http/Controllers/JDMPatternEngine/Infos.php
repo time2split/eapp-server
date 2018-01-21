@@ -143,6 +143,14 @@ class Infos extends FCInfos
             return $termb[0]->getWeight() - $terma[0]->getWeight();
         });
         $nbVal = $this->conf_domain_nbValues[$this->depth] ?? $this->conf_domain_nbValues_def;
+        
+        //Dédoublonnage
+        $tmp = array_map(function($e) {
+            return $e[0]->getAtoms()[$e['varPos']]->getValue();
+        }, $domain);
+        $tmp = array_unique($tmp);
+        $domain = array_intersect_key($domain, $tmp);
+        
 
         $positive = array_filter($domain, function($e) {
             return $e[0]->getWeight() >= 0;

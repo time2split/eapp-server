@@ -27,8 +27,6 @@ class JDMPatternEngine extends Controller
         $config['domain_nbValues']            = explode(',', $config['domain_nbValues']);
         $config['result_max']                 = explode(',', $config['result_max']);
         $config['domain_order_rand']          = (bool)$config['domain_order_rand'];
-//        var_dump($config);
-//        exit;
         return $config;
     }
 
@@ -71,7 +69,6 @@ class JDMPatternEngine extends Controller
 
         $info = new Infos($db, $Relation, $this->dbWord, $config);
         $ret  = $fchecking->ask($question, $info);
-//            var_dump($ret);
 
         if ($r->query('makeWords', true)) {
             $this->resultMakeWords($ret);

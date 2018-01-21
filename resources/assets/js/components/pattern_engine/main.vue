@@ -20,7 +20,8 @@
 
 
                     <div class="row form-row">
-                        <small class="form-text text-muted">Les champs suivant associent des valeurs par profondeur dans l'arbre de recherche séparées par des virgules</small>
+                        <small class="form-text text-muted">Les champs suivant associent des valeurs par profondeur dans l'arbre de recherche séparées par des virgules.
+                            En cas de profondeur plus grande que le nombre de valeurs données, la dernière valeur est utilisée.</small>
                     </div>
                     <div class="form-row row">
 
@@ -128,7 +129,7 @@
                 if (this.httpToken != null) {
                     this.httpToken.cancel();
                 }
-                
+
                 if (w1 === '' || w2 === '' || r === '') {
                     $('#result').html('Formulaire incomplet');
                     return;
@@ -140,17 +141,19 @@
                 for (var cname in this.$data.config)
                 {
                     var val = this.config[cname];
-                    
-                    if(typeof val === 'boolean')
+
+                    if (typeof val === 'boolean')
                         val = val ? 1 : 0;
-                    
+
                     params += '&config[' + cname + ']=' + val;
                 }
 
                 this.httpToken = HUB.addHttpRequest('/@jdmpattern/' + w1 + '/' + r + '/' + w2 + '?print=1' + params, (response) => {
                     $('#result').html(response.data);
                 }, (error) => {
-                    $('#result').html(error);
+
+                    if (!axios.isCancel(error))
+                        $('#result').html("error : " + error);
                 });
             }
         }

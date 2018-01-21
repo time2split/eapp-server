@@ -13,12 +13,24 @@ use App\Relation;
 use App\RelationType;
 use Illuminate\Http\Request;
 use App\Http\Controllers\JDMPatternEngine\Infos;
+use \Illuminate\Support\Facades\Storage;
 
 class JDMPatternEngine extends Controller
 {
     private $dbWord;
     private $dbRelation;
     private $dbRelationType;
+
+    private function makeConfig($config)
+    {
+        $config['filter_oneResult_divFactor'] = explode(',', $config['filter_oneResult_divFactor']);
+        $config['domain_nbValues']            = explode(',', $config['domain_nbValues']);
+        $config['result_max']                 = explode(',', $config['result_max']);
+        $config['domain_order_rand']          = (bool)$config['domain_order_rand'];
+//        var_dump($config);
+//        exit;
+        return $config;
+    }
 
     public function __construct(Word $dbWord, Relation $dbRelation, RelationType $dbRelationType)
     {
@@ -34,9 +46,12 @@ class JDMPatternEngine extends Controller
         $Relation     = $this->dbRelation;
         $RelationType = $this->dbRelationType;
 
-        $data     = file('/home/zuri/works/UM/HMIN302 - E-Applications/server/storage/rules.txt');
+        $data     = file(Storage::getDriver()->getAdapter()->applyPathPrefix('rules.txt'));
         $rfactory = new RuleManagerFactory_file($data, $RelationType);
         $rules    = $rfactory->new_();
+
+        $config = $r->query('config', []);
+        $config = $this->makeConfig($config);
 
         $db        = new Database();
         $fchecking = new FC($rules, $db);
@@ -54,7 +69,7 @@ class JDMPatternEngine extends Controller
         if ($wx === null || $wy === null || $wp === null)
             return [];
 
-        $info = new Infos($db, $Relation, $this->dbWord);
+        $info = new Infos($db, $Relation, $this->dbWord, $config);
         $ret  = $fchecking->ask($question, $info);
 //            var_dump($ret);
 

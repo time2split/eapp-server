@@ -139,7 +139,12 @@
 
                 for (var cname in this.$data.config)
                 {
-                    params += '&config[' + cname + ']=' + this.config[cname];
+                    var val = this.config[cname];
+                    
+                    if(typeof val === 'boolean')
+                        val = val ? 1 : 0;
+                    
+                    params += '&config[' + cname + ']=' + val;
                 }
 
                 this.httpToken = HUB.addHttpRequest('/@jdmpattern/' + w1 + '/' + r + '/' + w2 + '?print=1' + params, (response) => {

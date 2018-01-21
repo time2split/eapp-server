@@ -19,7 +19,7 @@ class Infos extends FCInfos
         'time_max'                       => 40,
         'domain_order_rand'              => false,
         'depth_max'                      => 1,
-        'filter_oneResult_divFactor'     => [2,3],
+        'filter_oneResult_divFactor'     => [2, 3],
         'domain_nbValues'                => [40, 20, 10],
         'result_max'                     => [10],
         'filter_oneResult_divFactor_def' => 4,
@@ -33,7 +33,7 @@ class Infos extends FCInfos
     private $asked = []; //Déjà demandés
     private $excludeWords;
 
-    public function __construct(Database $db, Relation $relation, Word $dbWord)
+    public function __construct(Database $db, Relation $relation, Word $dbWord, $config = [])
     {
         $this->db       = $db;
         $this->Relation = $relation;
@@ -47,7 +47,7 @@ class Infos extends FCInfos
             Cache::set('JDM:Infos:excluded', $this->excludeWords, 10);
         }
         $this->startTime = time();
-        $this->config    = self::CONFIG_DEF;
+        $this->config    = array_merge(self::CONFIG_DEF, (array) $config);
 
         foreach ($this->config as $k => &$v) {
             $this->{'conf_' . $k} = & $v;
@@ -69,7 +69,7 @@ class Infos extends FCInfos
     {
         if (time() - $this->startTime > $this->conf_time_max)
             return false;
-        
+
         return true;
     }
 
@@ -90,7 +90,6 @@ class Infos extends FCInfos
 
         foreach ($res['bind']->getHypotheses() as $term) {
             $w = $term->getWeight();
-//            var_dump($w . ' > ' . $inf);
 
             if ($w < $inf) {
                 return false;
@@ -99,7 +98,7 @@ class Infos extends FCInfos
         return true;
     }
 
-    public function filterTerm($term, /* $minWeight = null, */ $excludeWords = null)
+    private function filterTerm($term, /* $minWeight = null, */ $excludeWords = null)
     {
         $atoms = $term->getAtoms();
         $w     = $term->getWeight();
@@ -115,39 +114,73 @@ class Infos extends FCInfos
         ;
     }
 
-    public function filterDomain($domain)
+    private function filterDomain($domain)
     {
         $excludeWords = $this->excludeWords;
 //        $minWeight    = $this->minWeight();
         $me           = $this;
 
         return array_filter($domain, function($item) use($me, /* $minWeight, */ $excludeWords) {
-            return $this->filterTerm($item, $excludeWords);
+            return $this->filterTerm($item[0], $excludeWords);
         });
     }
 
     public function selectDomain($domain)
     {
+        /*
+         * Ajout de l'information varPos pour chaque entrée
+         */
+        foreach ($domain as &$dom) {
+            $varPos        = $dom['varPos'];
+            $dom['domain'] = array_map(function($e) use ($varPos) {
+                return ['varPos' => $varPos, $e];
+            }, $dom['domain']);
+        }
+        $domain = array_merge(...array_column($domain, 'domain'));
+        $domain = $this->filterDomain($domain);
+
         usort($domain, function($terma, $termb) {
-            return $termb->getWeight() - $terma->getWeight();
+            return $termb[0]->getWeight() - $terma[0]->getWeight();
         });
         $nbVal = $this->conf_domain_nbValues[$this->depth] ?? $this->conf_domain_nbValues_def;
 
         $positive = array_filter($domain, function($e) {
-            return $e->getWeight() >= 0;
+            return $e[0]->getWeight() >= 0;
         });
         $negative = array_filter($domain, function($e) {
-            return $e->getWeight() < 0;
+            return $e[0]->getWeight() < 0;
         });
+        $cpos = count($positive);
+        $cneg = count($negative);
+        $mid  = floor($nbVal / 2.0);
 
-        $a = array_merge(array_slice($positive, 0, $nbVal), array_slice($negative, - $nbVal));
+        if ($cpos >= $mid && $cneg >= $mid) {
+            $cpos = ceil($nbVal / 2.0);
+            $cneg = floor($nbVal / 2.0);
+        }
+        elseif ($cpos < $mid) {
+            $cneg = $nbVal - $cpos;
+        }
+        elseif ($cneg < $mid) {
+            $cpos = $nbVal - $cneg;
+        }
+        $a = array_merge(array_slice($positive, 0, $cpos), array_slice($negative, - $cneg));
 
         if ($this->conf_domain_order_rand) {
             shuffle($a);
         }
+        $a = array_map(function($e) {
+            return $e[0]->getAtoms()[$e['varPos']]->getValue();
+        }, $a);
         return $a;
     }
 
+    /**
+     * Moyenne géométrique
+     * 
+     * @param iterable $ruleBinded
+     * @return int
+     */
     public function computeWeight($ruleBinded)
     {
         $w      = 1;

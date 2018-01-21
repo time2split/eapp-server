@@ -12,10 +12,10 @@ class RuleManagerFactory_file
     private $data;
     private $relations;
 
-    public function __construct( $data, RelationType $relations = null )
+    public function __construct($data, RelationType $relations = null)
     {
-        if ( is_string( $data ) )
-            $data = explode( "\n", $data );
+        if (is_string($data))
+            $data = explode("\n", $data);
 
         $this->data      = $data;
         $this->relations = $relations;
@@ -25,51 +25,51 @@ class RuleManagerFactory_file
     {
         $ruleManager = new RuleManager();
 
-        foreach ( $this->data as $line )
-        {
+        foreach ($this->data as $line) {
 //            $id   = 0; //Id pour noms générés
-            $line = trim( $line );
+            $line = trim($line);
 
-            if ( empty( $line ) || $line[0] == '#' )
+            if (empty($line) || $line[0] == '#')
                 continue;
 
             $pattern = "/([\w_]+)\((.+?)\)/";
 
-            preg_match_all( $pattern, $line, $matches );
-            $res   = array_map( null, $matches[1], $matches[2] );
+            preg_match_all($pattern, $line, $matches);
+            $res   = array_map(null, $matches[1], $matches[2]);
             $terms = [];
 
-            foreach ( $res as $cur )
-            {
+//            if (count($res) !== 3) {
+//                throw new Exception( "Seule les règles de la forme A B -> C sont acceptées" );
+//            }
+
+            foreach ($res as $cur) {
                 $p         = $cur[0];
-                $tmpvars   = preg_split( '/[\W]/', $cur[1] );
+                $tmpvars   = preg_split('/[\W]/', $cur[1]);
                 $termAtoms = [];
 
-                foreach ( $tmpvars as $cvar )
-                {
-                    $atom        = new Atom( $cvar );
+                foreach ($tmpvars as $cvar) {
+                    $atom        = new Atom($cvar);
                     $termAtoms[] = $atom;
 
                     // On bind la relation avec son id
-                    if ( $this->relations )
-                    {
-                        $pp = $this->relations->getRelation( $p );
+                    if ($this->relations) {
+                        $pp = $this->relations->getRelation($p);
 
-                        if ( $pp === null )
-                            throw new Exception( "Relation $p n'existe pas !" );
+                        if ($pp === null)
+                            throw new Exception("Relation $p n'existe pas !");
 
                         $p = $pp->_id;
                     }
                 }
-                $term    = new Term( $p );
-                $term->addAtom( ...$termAtoms );
+                $term    = new Term($p);
+                $term->addAtom(...$termAtoms);
                 $terms[] = $term;
             }
-            $conclusion = array_pop( $terms );
+            $conclusion = array_pop($terms);
             $rule       = new Rule( );
-            $rule->addConclusion( $conclusion );
-            $rule->addHypothesis( ...$terms );
-            $ruleManager->addRule( $rule );
+            $rule->addConclusion($conclusion);
+            $rule->addHypothesis(...$terms);
+            $ruleManager->addRule($rule);
         }
         return $ruleManager;
     }

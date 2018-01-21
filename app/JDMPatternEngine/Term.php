@@ -5,7 +5,7 @@ namespace App\JDMPatternEngine;
 use App\JDMPatternEngine\Atom;
 
 /**
- * Terme JSM de la forme predicate(x,y)
+ * Terme JSM de la forme predicate(x,y, ...)
  */
 class Term
 {
@@ -199,6 +199,15 @@ class Term
                 $ret[$i] = $atom;
         }
         return $ret;
+    }
+
+    public function getVariable($varName)
+    {
+        foreach ($this->atoms as $i => $atom) {
+            if ($atom->isVariable() && $atom->getName() == $varName)
+                return $atom;
+        }
+        return null;
     }
 
     public function hasVariable($varName)

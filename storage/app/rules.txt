@@ -1,0 +1,19 @@
+r_meaning(a,b) r_has_part(b,c) -> r_has_part(a,c)
+r_isa(a,b)     r_has_part(b,c) -> r_has_part(a,c)
+
+r_meaning(a,b) r_domain(b,c)   -> r_domain(a,c)
+
+r_meaning(a,b) r_can_eat(b,c)  -> r_can_eat(a,c)
+r_isa(a,b)     r_can_eat(b,c)  -> r_can_eat(a,c)
+
+r_meaning(a,b) r_familly(b,c)  -> r_familly(a,c)
+r_isa(a,b)     r_familly(b,c)  -> r_familly(a,c)
+
+
+r_associated(a,b) r_associated(b,c)  -> r_associated(a,c)
+#r_associated(a,x) r_associated(x,y)  r_associated(y,c)  -> r_associated(a,c)
+r_meaning(a,b)    r_associated(b,c)  -> r_associated(a,c)
+r_isa(a,b)        r_associated(b,c)  -> r_associated(a,c)
+
+r_isa(a,b)     r_isa(b,c)      -> r_isa(a,c)
+#r_isa(a,x)  r_isa(x,y)   r_isa(y,c)      -> r_isa(a,c)

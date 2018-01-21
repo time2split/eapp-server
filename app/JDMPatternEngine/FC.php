@@ -22,10 +22,10 @@ class FC
         $this->db    = $db;
     }
 
-    private function searchDomains($variables)
-    {
-        
-    }
+//    private function searchDomains($variables)
+//    {
+//        
+//    }
 
     public function directAsk(Term $conclusion)
     {
@@ -37,95 +37,122 @@ class FC
         return null;
     }
 
-    private function getQueryOrder($freeVariables, $hterms)
+    private function getQVOrder($hterms)
     {
         $htermsStats = new \SplObjectStorage;
 
-//        var_dump( $freeVariables );
-//            $this->searchDomains( $freeVariables );
-        //init de $htupleStats
-
-        $fgetOneVarTerms = function() use ($hterms, $htermsStats) {
+        $fgetOneVarTerms = function($hterms, $htermsStats) {
             return array_filter($hterms, function($hterm) use ($htermsStats) {
                 $stats = $htermsStats[$hterm];
-                return count($hterm->getAtoms()) - $stats['free'] == 1;
+                return $stats['free'] == 1;
             });
         };
 
-//        foreach ($freeVariables as $var)
-        {
+        /*
+         * Init des stats
+         */
+        foreach ($hterms as $term) {
+            $nbFreeVariables = 0;
 
-            foreach ($hterms as $term) {
-                $nbFreeVariables = 0;
+            foreach ($term->getAtoms() as $atom) {
 
-                foreach ($term->getAtoms() as $atom) {
-                    if ($atom->isVariable())
-                        $nbFreeVariables++;
-                }
-                $htermsStats[$term] = ['free' => $nbFreeVariables, /* 'term' => $term, */ 'domain' => []];
+                if ($atom->isVariable())
+                    $nbFreeVariables++;
             }
+            $htermsStats[$term] = ['free' => $nbFreeVariables];
         }
 
         //Caclul de queryOrder
-        $queryOrder = [];
+        $allVariables = [];
+        $orders       = ['variables' => [], 'query' => []];
+        $i            = -1;
 
         while (true) {
-            $oneVarTerms = $fgetOneVarTerms();
-            $queryOrder  = array_merge($queryOrder, $oneVarTerms);
-            $hterms      = array_diff($hterms, $oneVarTerms);
+            $i++;
+            $oneVarTerms = $fgetOneVarTerms($hterms, $htermsStats);
 
-            if (empty($freeVariables))
-                break;
+            if (empty($oneVarTerms)) {
+                throw new Exception("Erreur dans l'ordonnancement de le requête");
+            }
+            $hterms                  = array_diff($hterms, $oneVarTerms);
+            $orders['variables'][$i] = [];
+            $orders['query'][$i]     = array_values($oneVarTerms);
+            $currentVariables        = [];
 
-            foreach ($oneVarTerms as $onevterm) {
-                $var = $onevterm->getVariables();
-                $var = array_pop($var);
+            /*
+             * Récupération des variables trouvées
+             */
+            foreach ($oneVarTerms as $hterm) {
+                unset($htermsStats[$hterm]);
 
-                foreach ($hterms as $k => $hterm) {
+                /*
+                 * On récupère la variable libre du terme
+                 */
+                foreach ($hterm->getVariables() as $var) {
 
-                    if (!$hterm->hasVariable($var->getName()))
-                        continue;
-                    $stats               = $htermsStats[$hterm];
-                    $stats['free'] --;
-                    $htermsStats[$hterm] = $stats;
+                    // Toutes les autres variables sont dans $allVariables
+                    if (!in_array($var->getName(), $allVariables)) {
+                        $vname = $var->getName();
 
-                    if ($stats['free'] == 0) {
-//                            if ( !in_array( $hterm, $queryOrder ) )
-                        $queryOrder[] = $hterm;
-                        unset($hterms[$k]);
+                        if (!isset($currentVariables[$vname])) {
+                            $currentVariables[$vname] = $var;
+                        }
+                        break;
                     }
                 }
             }
-            break;
-        }
-        if (!empty($hterms))
-            throw new Exception("Erreur dans la règle $ruleBinded, impossible de détecter le domaine de toutes les variables");
 
-        return $queryOrder;
-    }
+            foreach ($currentVariables as $vname => $hterm) {
+                $allVariables[]                  = $vname;
+                $orders['variables'][$i][$vname] = $hterm;
 
-    private function getDomains($queryOrder, FCInfos $info)
-    {
-        $domains = [];
+                /**
+                 * MAJ des stats
+                 */
+                foreach ($hterms as $k => $hterm) {
+                    $stats = $htermsStats[$hterm];
 
-        foreach ($queryOrder as $hterm) {
-            $vars    = $hterm->getVariables();
-            $cte     = $hterm->getConstants();
-            $mustAsk = false;
+                    if ($hterm->hasVariable($vname)) {
+                        $stats['free'] --;
 
-            foreach ($vars as $pos => $var) {
-                $varName = $var->getName();
-
-                if (isset($domains[$varName])) {
-                    continue;
+                        if ($stats['free'] == 0) {
+                            unset($hterms[$k]);
+                            unset($htermsStats[$hterm]);
+                        }
+                        else
+                            $htermsStats[$hterm] = $stats;
+                    }
                 }
-                $mustAsk = true;
-                //Impossible qu'il y ai plus de 1 variables
-                break;
             }
 
-            if (!$mustAsk)
-                continue;
+            if (empty($hterms))
+                break;
+        }
+        return $orders;
+    }
+    /*
+     * On se base sur les hterms dont les valeurs sont fixés par la requête,
+     * autrement dit la profondeur 0 de $varsOrder
+     */
+
+    private function getDomains($orders, FCInfos $info)
+    {
+        $varsOrder  = $orders['variables'];
+        $queryOrder = $orders['query'];
+        $domains    = [];
+
+        //Check variables libres
+
+        if (count($varsOrder) > 1) {
+            $vars = implode(',', array_keys(array_merge(...array_slice($varsOrder, 1))));
+            throw new Exception("Les variables $vars sont sans contraintes, trop de combinaisons possibles");
+        }
+
+        foreach ($queryOrder[0] as $hterm) {
+            $vars    = $hterm->getVariables();
+            $varPos  = array_keys($vars)[0];
+            $var     = $vars[$varPos];
+            $varName = $var->getName();
 
             $info->moreData($hterm);
             $res = $this->directAsk($hterm);
@@ -133,15 +160,16 @@ class FC
             if (empty($res))
                 return null;
 
-            $res = $info->filterDomain($res);
-            $res = $info->selectDomain($res);
+            $vals = $res;
 
-            $vals = array_map(function($e) use ($pos) {
-                return $e->getAtoms()[$pos]->getValue();
-            }, $res);
+            if (!isset($domains[$varName]))
+                $domains[$varName] = [];
 
-            //Ordonne les clés
-            $domains[$varName] = array_values($vals);
+            $domains[$varName][] = ['varPos' => $varPos, 'domain' => $vals];
+        }
+
+        foreach ($domains as $varName => $domain) {
+            $domains[$varName] = $info->selectDomain($domain);
         }
         return $domains;
     }
@@ -170,6 +198,7 @@ class FC
 
             if ($cdata['current'] == $cdata['last']) {
                 $bind = [];
+
                 do {
                     if ($i === 0)
                         return null;
@@ -200,6 +229,7 @@ class FC
         $direct = $this->directAsk($conclusion);
 
         if ($direct !== null) {
+
             if (!isset($direct[0])) {
                 var_dump($direct);
                 exit;
@@ -218,7 +248,7 @@ class FC
         /*
          * Atomes
          *  ne devant pas apparaitre comme destination dans un terme
-         * Limité au atomes pire depart -> arrivé
+         * Limité au atomes paire depart -> arrivé
          */
         $excludedWords[] = $conclusion->getAtom(0)->getValue();
         $excludedWords[] = $conclusion->getAtom(1)->getValue();
@@ -234,15 +264,15 @@ class FC
                 $val         = $conclusion->getAtom($k)->getValue();
                 $bind[$name] = $val;
             }
-//            $asks       = [];
             $ruleBinded = clone $rule;
             $ruleBinded->bind($bind);
 
             //Calcul de l'ordre de traitement de la requête
-            $freeVariables = $ruleBinded->getVariables();
-            $hterms        = $ruleBinded->getHypotheses();
-            $queryOrder    = $this->getQueryOrder($freeVariables, $hterms);
-            $domains       = $this->getDomains($queryOrder, $info);
+            $hterms     = $ruleBinded->getHypotheses();
+            $orders     = $this->getQVOrder($hterms);
+            $varsOrder  = array_merge(...$orders['variables']);
+            $queryOrder = array_merge(...$orders['query']);
+            $domains    = $this->getDomains($orders, $info);
 
             if (empty($domains))
                 goto end;
@@ -255,42 +285,24 @@ class FC
             //Recupération de l'ordre des variables pour binder
             $varOrder = [];
 
-            foreach ($queryOrder as $k => $hterm) {
-                $vars    = $hterm->getVariables();
-                $newVars = [];
-
-                foreach ($vars as $var) {
-                    $varName = $var->getName();
-
-                    if (!array_key_exists($varName, $varOrder))
-                        $newVars[$varName] = $var;
-                }
-                if (!empty($newVars))
-                    $varOrder = array_merge($varOrder, $newVars);
+            foreach ($varsOrder as $vname => $varAtom) {
+                $varOrder[$vname] = $varAtom;
             }
-/// TEST
-//            $data = null;
-//            $a    = time(true);
-//            
-//            while (true) {
-//                $bind = $this->nextBind($varOrder, $domains, $data);
-//                echo 'i';
-//                if ($bind === null)
-//                    break;
+            
+// Ancienne méthode pour obtenir $varOrder
+//            foreach ($queryOrder as $k => $hterm) {
+//                $vars    = $hterm->getVariables();
+//                $newVars = [];
 //
-//                $ruleBinded->bind($bind);
-//                foreach ($ruleBinded->getHypotheses() as $k => $hterm) {
-//                    $isOneTerm = in_array($k, $oneVariableTerm);
+//                foreach ($vars as $var) {
+//                    $varName = $var->getName();
 //
-////                    if (!$isOneTerm)
-//                    {
-//                        $info->moreData($hterm);
-//                    }
-//                    $ask = $this->directAsk($hterm, $info);
+//                    if (!array_key_exists($varName, $varOrder))
+//                        $newVars[$varName] = $var;
 //                }
+//                if (!empty($newVars))
+//                    $varOrder = array_merge($varOrder, $newVars);
 //            }
-//            var_dump(time(true) - $a);
-//            continue;
 
             $data = null;
 
@@ -334,17 +346,11 @@ class FC
                         $word = $words[$i];
 
                         if (in_array($word, $localExcludedWords)) {
-//                        var_dump($word);
-//                        var_dump($localExcludedWords);
                             continue 2;
                         }
                         $localExcludedWords[] = $word;
                     }
                 }
-//                unset($atoms);
-//                unset($localExcludedAtom);
-//                $localExcludedWords = $excludedWords;
-
                 $asks = [];
 
                 foreach ($ruleBinded->getHypotheses() as $k => $hterm) {
@@ -368,13 +374,11 @@ class FC
                         }
 
                         if (empty($ask)) {
-//                            var_dump('tt');
                             continue 2;
                         }
                         array_filter($ask, [$info, 'filterOneResult']);
 
                         if (empty($ask)) {
-//                            var_dump('bb');
                             continue 2;
                         }
                         //TODO: meilleur calcul

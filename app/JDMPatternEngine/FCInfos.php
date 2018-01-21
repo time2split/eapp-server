@@ -28,16 +28,6 @@ class FCInfos
         return true;
     }
 
-//    public function filterTerm($term)
-//    {
-//        return true;
-//    }
-
-//    public function filterDomain($domain)
-//    {
-//        return $domain;
-//    }
-
     public function computeWeight($ruleBinded)
     {
         return 0;

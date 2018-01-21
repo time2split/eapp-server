@@ -17,6 +17,15 @@
                             <label>Profondeur max <input class="form-control input-sm" type="number" v-model="config.depth_max" /></label>
                         </div>
                     </div>
+                    
+                    <div class="row form-row">
+                        <div class="form-group col-sm-6">
+                            <label>
+                                <input class="form-check-input" type="checkbox" v-model="config.domain_order_rand" />
+                                Ordonner aléatoirement les domaines
+                            </label>
+                        </div>
+                    </div>
 
 
                     <div class="row form-row">
@@ -146,6 +155,7 @@
                         val = val ? 1 : 0;
 
                     params += '&config[' + cname + ']=' + val;
+//                    console.log('&config[' + cname + ']=' + val)
                 }
 
                 this.httpToken = HUB.addHttpRequest('/@jdmpattern/' + w1 + '/' + r + '/' + w2 + '?print=1' + params, (response) => {

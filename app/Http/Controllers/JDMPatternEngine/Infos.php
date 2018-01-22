@@ -147,11 +147,14 @@ class Infos extends FCInfos
         //Intersection si derniere profondeur atteinte
         if ($this->depth >= $this->conf_depth_max) {
             $tmp = [];
-            
+
             foreach ($domain as $dom) {
                 $tmp[] = $this->getValuesOfDomain($dom['domain']);
             }
-            $tmp = array_intersect(...$tmp);
+            
+            if (count($tmp) > 1)
+                $tmp    = array_intersect(...$tmp);
+            
             $domain = array_intersect_key($domain[0]['domain'], $tmp);
         }
         else {
@@ -224,6 +227,12 @@ class Infos extends FCInfos
         return (int) pow($w, 1 / count($ruleBinded->getHypotheses())) * $factor;
     }
 
+    /**
+     * Retourne les relations depuis mongodb
+     * @param type $demand
+     * @return type
+     * @throws Exception
+     */
     private function moreRelationsAskFor($demand)
     {
         if (is_array($demand)) {
@@ -286,6 +295,10 @@ class Infos extends FCInfos
         }
         elseif ($on instanceof Term) {
             $relations = $this->moreRelationsAskFor($on);
+            
+            if(empty($relations))
+                return null;
+            
             $terms     = $this->relations2Terms($relations);
             $this->db->addTerm(...$terms);
             return true;

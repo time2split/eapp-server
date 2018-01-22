@@ -235,8 +235,10 @@ class FC
                 exit;
             }
             $ret[] = ['rule' => null, 'bind' => null, 'result' => $direct[0], 'asks' => []];
+            return $ret;
         }
-        return array_merge($ret, $this->ask_($conclusion, $info));
+//        return array_merge($ret, $this->ask_($conclusion, $info));
+        return $this->ask_($conclusion, $info);
     }
 
     private function ask_(Term $conclusion, FCInfos $info, $excludedWords = [])
@@ -288,22 +290,6 @@ class FC
             foreach ($varsOrder as $vname => $varAtom) {
                 $varOrder[$vname] = $varAtom;
             }
-            
-// Ancienne méthode pour obtenir $varOrder
-//            foreach ($queryOrder as $k => $hterm) {
-//                $vars    = $hterm->getVariables();
-//                $newVars = [];
-//
-//                foreach ($vars as $var) {
-//                    $varName = $var->getName();
-//
-//                    if (!array_key_exists($varName, $varOrder))
-//                        $newVars[$varName] = $var;
-//                }
-//                if (!empty($newVars))
-//                    $varOrder = array_merge($varOrder, $newVars);
-//            }
-
             $data = null;
 
             /**
@@ -324,6 +310,7 @@ class FC
                 /*
                  * On vérifie que les arrivées sont valides
                  * On évite les cycles sur la règle
+                 * TODO: le mettre dans une fonction de $infos
                  */
                 $hypos   = $ruleBinded->getHypotheses();
                 $hypos_c = count($hypos);
@@ -356,10 +343,7 @@ class FC
                 foreach ($ruleBinded->getHypotheses() as $k => $hterm) {
                     $isOneTerm = in_array($k, $oneVariableTerm);
 
-//                    if (!$isOneTerm)
-                    {
-                        $info->moreData($hterm);
-                    }
+                    $info->moreData($hterm);
                     $ask = $this->directAsk($hterm, $info);
                     /*
                      * Appel récursif

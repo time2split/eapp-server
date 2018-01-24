@@ -2,8 +2,6 @@
 
 namespace App\JDMPatternEngine;
 
-use App\JDMPatternEngine\Variable;
-
 /**
  * Règle de la forme pred1 && pred2 && ... -> predconcl
  * Les variables de même noms dans des termes différents doivent être une même instance d'atome
@@ -14,64 +12,48 @@ class Rule
     private $conclusions = [];
     private $atoms       = [];
 
-    public function __construct()
+    private function add(&$where, Term ...$terms)
     {
-        
-    }
-
-    private function add( &$where, Term ...$terms )
-    {
-        foreach ( $terms as $term )
-        {
-            foreach ( $term->getAtoms() as $k => $atom )
-            {
-                $ares = array_search( $atom, $this->atoms );
+        foreach ($terms as $term) {
+            foreach ($term->getAtoms() as $k => $atom) {
+                $ares = array_search($atom, $this->atoms);
 
                 //Nouvel atome
-                if ( $ares === false )
-                {
+                if ($ares === false) {
                     $this->atoms[] = $atom;
                 }
                 //Atome similaire présent
-                else
-                {
-                    $term->setAtom( $k, $this->atoms[$ares] );
+                else {
+                    $term->setAtom($k, $this->atoms[$ares]);
                 }
             }
         }
-        $where = array_merge( $where, $terms );
+        $where = array_merge($where, $terms);
     }
 
-    public function addConclusion( Term ...$terms )
+    public function addConclusion(Term ...$terms)
     {
-        return $this->add( $this->conclusions, ...$terms );
+        return $this->add($this->conclusions, ...$terms);
     }
 
-    public function addHypothesis( Term ...$terms )
+    public function addHypothesis(Term ...$terms)
     {
-        return $this->add( $this->hypothesis, ...$terms );
+        return $this->add($this->hypothesis, ...$terms);
     }
 
     public function getVariables()
     {
-        return array_filter( $this->atoms, function($a) {
+        return array_filter($this->atoms, function($a) {
             return $a->isVariable();
-        } );
+        });
     }
-    
-//    public function getWithVariable($vname)
-//    {
-//        return array_filter( $this->atoms, function($a) {
-//            return $a->isVariable() && $a->getName() === $vname;
-//        } );
-//    }
 
     public function getHypotheses()
     {
         return $this->hypothesis;
     }
 
-    public function getHypothesis( int $i = 0 )
+    public function getHypothesis(int $i = 0)
     {
         return $this->hypothesis[$i];
     }
@@ -81,46 +63,43 @@ class Rule
         return $this->conclusions;
     }
 
-    public function getConclusion( int $i = 0 )
+    public function getConclusion(int $i = 0)
     {
         return $this->conclusions[$i];
     }
 
     public function getAllTerms()
     {
-        return array_merge( $this->getHypotheses(), $this->getConclusions() );
+        return array_merge($this->getHypotheses(), $this->getConclusions());
     }
 
-    private function cloneOne( &$what )
+    private function cloneOne(&$what)
     {
         $tmp  = $what;
         $what = [];
 
-        foreach ( $tmp as $term )
-        {
-            $this->add( $what, clone $term );
+        foreach ($tmp as $term) {
+            $this->add($what, clone $term);
         }
     }
 
     public function __clone()
     {
         $this->atoms = [];
-        $this->cloneOne( $this->hypothesis );
-        $this->cloneOne( $this->conclusions );
+        $this->cloneOne($this->hypothesis);
+        $this->cloneOne($this->conclusions);
     }
 
-    public function bind( $vars )
+    public function bind($vars)
     {
-        foreach ( $this->atoms as $atom )
-        {
+        foreach ($this->atoms as $atom) {
             //Normalement toujours le cas
 //            if ( $atom->isVariable() )
             {
                 $name = $atom->getName();
 
-                if ( isset( $vars[$name] ) )
-                {
-                    $atom->setValue( $vars[$name] );
+                if (isset($vars[$name])) {
+                    $atom->setValue($vars[$name]);
                 }
             }
         }
@@ -129,14 +108,12 @@ class Rule
     public function __toString()
     {
         $ret = '';
-        foreach ( $this->getHypotheses() as $hterm )
-        {
+        foreach ($this->getHypotheses() as $hterm) {
             $ret .= (string) $hterm . ' ';
         }
         $ret .= '->';
 
-        foreach ( $this->getConclusions() as $cterm )
-        {
+        foreach ($this->getConclusions() as $cterm) {
             $ret .= ' ' . (string) $cterm;
         }
         return $ret;

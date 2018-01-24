@@ -44,6 +44,9 @@ class Infos extends FCInfos
         $this->db       = $db;
         $this->Relation = $relation;
 
+        /*
+         * Récupération/calcul des mots exclus (ex: _INFO-NO-MORE-QUESTION)
+         */
         if (Cache::has('JDM:Infos:excluded')) {
             $this->excludeWords = Cache::get('JDM:Infos:excluded');
         }
@@ -144,6 +147,7 @@ class Infos extends FCInfos
     }
 
     /**
+     * (interne)
      * Transforme un tableau de domaines en tableaux de valeurs (id des mots)
      */
     private function getValuesOfDomain($domain)

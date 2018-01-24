@@ -12,9 +12,9 @@ class RuleManager
 {
     private $rules = [];
 
-    public function addRule( Rule ...$rules )
+    public function addRule(Rule ...$rules)
     {
-        $this->rules = array_merge( $this->rules, $rules );
+        $this->rules = array_merge($this->rules, $rules);
     }
 
     public function getRules()
@@ -28,18 +28,17 @@ class RuleManager
      * @param type $pred
      * @return type
      */
-    public function getRulesWithConclusion( $pred )
+    public function getRulesWithConclusion($pred)
     {
         $ret = [];
 
-        if ( $pred instanceof Term )
+        if ($pred instanceof Term)
             $pred = $pred->getPredicate();
 
-        foreach ( $this->rules as $rule )
-        {
+        foreach ($this->rules as $rule) {
             $conclusion = $rule->getConclusion();
 
-            if ( $conclusion->getPredicate() == $pred )
+            if ($conclusion->getPredicate() == $pred)
                 $ret[] = $rule;
         }
         return $ret;

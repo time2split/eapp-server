@@ -118,57 +118,6 @@ class Term
         }
         return true;
     }
-    /**
-     * Retourne null si 2 variables ; $b->$var si $this variable ; $b != $this sinon
-     */
-//    public function variableMatch( $var, Term $b )
-//    {
-//        if ( $b->getPredicate() !== $this->getPredicate() )
-//            return null;
-//
-//        $ret = ['x' => null, $y => null];
-//        $tv  = $this->$var;
-//        $bv  = $b->$var;
-//
-//        if ( $tx->isVariable() )
-//        {
-//            if ( $by->isVariable() )
-//                return null;
-//            else
-//                return $bv;
-//        }
-//        else
-//        {
-//            return $bv == $tv;
-//        }
-//    }
-//    static public function sameAtoms(Term $a, Term $b)
-//    {
-//        $aas = $a->getAtoms();
-//        $bas = $b->getAtoms();
-//
-//        if (count($aas) != count($bas))
-//            return false;
-//
-//        foreach ($aas as $k => $aa) {
-//            $ba = $bas[$k];
-//
-//            if ($aa != $ba)
-//                return false;
-//        }
-//        return true;
-//    }
-
-    /**
-     * Comparaison sans le poids (weight)
-     * @param \App\JDMPatternEngine\Term $a
-     * @param \App\JDMPatternEngine\Term $b
-     * @return type
-     */
-//    static public function sameNature(Term $a, Term $b)
-//    {
-//        return $a->getPredicate() === $b->getPredicate() && self::sameAtoms($a, $b);
-//    }
 
     /**
      * Comparaison sans le poids (weight)
@@ -179,12 +128,12 @@ class Term
     static public function sameValue(Term $a, Term $b)
     {
         $c = count($a->getAtoms());
-        
-        if($c != count($b->getAtoms()))
+
+        if ($c != count($b->getAtoms()))
             return false;
-        
-        for ($i = 0 ; $i < $c ; $i++) {
-            
+
+        for ($i = 0; $i < $c; $i++) {
+
             if ($a->getAtom($i)->getValue() !== $b->getAtom($i)->getValue())
                 return false;
         }

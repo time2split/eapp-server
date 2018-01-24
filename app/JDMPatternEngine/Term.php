@@ -5,7 +5,7 @@ namespace App\JDMPatternEngine;
 use App\JDMPatternEngine\Atom;
 
 /**
- * Terme JSM de la forme predicate(x,y, ...)
+ * Terme JSM de la forme predicate(atom_x,atom_y, ...)
  */
 class Term
 {

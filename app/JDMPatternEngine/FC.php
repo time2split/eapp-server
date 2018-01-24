@@ -9,7 +9,7 @@ use App\JDMPatternEngine\FCInfos;
 use Exception;
 
 /**
- * Chaînage avant
+ * Implémentation de l'algo de chaînage arrière
  */
 class FC
 {
@@ -22,11 +22,12 @@ class FC
         $this->db    = $db;
     }
 
-//    private function searchDomains($variables)
-//    {
-//        
-//    }
-
+    /**
+     * Demande si un terme est présant dans la DB locale
+     * 
+     * @param Term $conclusion
+     * @return null|iterable Le terme trouvé
+     */
     public function directAsk(Term $conclusion)
     {
         $search = $this->db->matchingTerms($conclusion);
@@ -37,6 +38,13 @@ class FC
         return null;
     }
 
+    /**
+     * Récupère l'ordre d'exécution de la requête/des variables
+     * 
+     * @param type $hterms
+     * @return type
+     * @throws Exception
+     */
     private function getQVOrder($hterms)
     {
         $htermsStats = new \SplObjectStorage;
@@ -130,19 +138,20 @@ class FC
         }
         return $orders;
     }
-    /*
-     * On se base sur les hterms dont les valeurs sont fixés par la requête,
+
+    /**
+     * On se base sur les hterms dont les valeurs sont fixées par la requête,
      * autrement dit la profondeur 0 de $varsOrder
      */
-
     private function getDomains($orders, FCInfos $info)
     {
         $varsOrder  = $orders['variables'];
         $queryOrder = $orders['query'];
         $domains    = [];
 
-        //Check variables libres
-
+        /*
+         * On refuse les terme p(a,b) où a et b sont tous deux libres, sans contraintes
+         */
         if (count($varsOrder) > 1) {
             $vars = implode(',', array_keys(array_merge(...array_slice($varsOrder, 1))));
             throw new Exception("Les variables $vars sont sans contraintes, trop de combinaisons possibles");
@@ -154,9 +163,13 @@ class FC
             $var     = $vars[$varPos];
             $varName = $var->getName();
 
+            //Chargement depuis mongodb vers DB locale (seulement si necessaire)
             $info->moreData($hterm);
+
+            //Le terme est-il chargé dans la DB locale ?
             $res = $this->directAsk($hterm);
 
+            //Le terme n'existe pas dans mongodb
             if (empty($res))
                 return null;
 
@@ -174,10 +187,21 @@ class FC
         return $domains;
     }
 
+    /**
+     * Retourne la prochaine affectation de variables
+     * 
+     * @param array $varOrder ordres renvoyé par getQVOrder
+     * @param array $domains Les domaines des variables
+     * @param array $data Les données internes de cette fonction
+     * @return type
+     */
     private function nextBind($varOrder, $domains, &$data)
     {
         $bind = null;
 
+        /*
+         * Première exécution
+         */
         if ($data === null) {
             $bind = [];
 
@@ -222,6 +246,13 @@ class FC
         return $bind;
     }
 
+    /**
+     * Traitement de la requête $conclusion
+     * 
+     * @param Term $conclusion La requête
+     * @param FCInfos $info L'objet comportemental
+     * @return array
+     */
     public function ask(Term $conclusion, FCInfos $info)
     {
         $ret    = [];
@@ -241,6 +272,14 @@ class FC
         return $this->ask_($conclusion, $info);
     }
 
+    /**
+     * Sous fonction de ask()
+     * 
+     * @param Term $conclusion
+     * @param FCInfos $info
+     * @param type $excludedWords Mots exclus (pour éviter les cycles)
+     * @return type
+     */
     private function ask_(Term $conclusion, FCInfos $info, $excludedWords = [])
     {
         $ret         = [];
@@ -248,9 +287,11 @@ class FC
         $applicables = $rules->getRulesWithConclusion($conclusion);
 
         /*
-         * Atomes
-         *  ne devant pas apparaitre comme destination dans un terme
+         * Variable pour éviter les cycles
+         * 
+         * Atomes ne devant pas apparaitre comme destination dans un terme
          * Limité au atomes paire depart -> arrivé
+         * Ici la conclusion ne peut plus être présente dans les hypothèse, sinon cela veut dire que un cycle est présent
          */
         $excludedWords[] = $conclusion->getAtom(0)->getValue();
         $excludedWords[] = $conclusion->getAtom(1)->getValue();
@@ -340,6 +381,9 @@ class FC
                 }
                 $asks = [];
 
+                /*
+                 * Création de résultats (direct ou récursif)
+                 */
                 foreach ($ruleBinded->getHypotheses() as $k => $hterm) {
                     $isOneTerm = in_array($k, $oneVariableTerm);
 
@@ -360,6 +404,7 @@ class FC
                         if (empty($ask)) {
                             continue 2;
                         }
+                        //On filtre les résultats
                         array_filter($ask, [$info, 'filterOneResult']);
 
                         if (empty($ask)) {
@@ -383,14 +428,17 @@ class FC
                 $tmpr->getConclusion()->setWeight($info->computeWeight($tmpr));
                 $tmp  = ['rule' => $rule, 'bind' => $tmpr, 'result' => $tmpr->getConclusion(), 'asks' => $asks];
 
+                //Le résultat $tmp est-il filtré, si oui (false) on reprend la boucle au début
                 if (!$info->filterOneResult($tmp))
                     continue;
 
                 $ret[] = $tmp;
 
+                //Si on est à la profondeur 0
                 if ($info->depth == 0)
                     $info->nbResults++;
 
+                //Vérification du nombre de résultats < max
                 if (count($ret) >= $info->getNbMaxResults())
                     break;
             }

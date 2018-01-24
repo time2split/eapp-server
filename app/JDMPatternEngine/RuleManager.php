@@ -5,6 +5,9 @@ namespace App\JDMPatternEngine;
 use App\JDMPatternEngine\Rule;
 use App\JDMPatternEngine\Term;
 
+/**
+ * Gestionnaire de règles
+ */
 class RuleManager
 {
     private $rules = [];
@@ -19,6 +22,12 @@ class RuleManager
         return $this->rules;
     }
 
+    /**
+     * Récupère les règles dont la conclusion est $pred
+     * 
+     * @param type $pred
+     * @return type
+     */
     public function getRulesWithConclusion( $pred )
     {
         $ret = [];

@@ -23,12 +23,13 @@ class JDMPatternEngine extends Controller
 
     private function makeConfig($config)
     {
+        $config['filter_oneResult_divFactor'] = array_map('intval', explode(',', $config['filter_oneResult_divFactor']));
+        $config['domain_nbValues']            = array_map('intval', explode(',', $config['domain_nbValues']));
+        $config['result_max']                 = array_map('intval', explode(',', $config['result_max']));
+
         $config['filter_oneResult_divFactor_def'] = $config['filter_oneResult_divFactor'][count($config['filter_oneResult_divFactor']) - 1];
         $config['domain_nbValues_def']            = $config['domain_nbValues'][count($config['domain_nbValues']) - 1];
         $config['result_max_def']                 = $config['result_max'][count($config['result_max']) - 1];
-        $config['filter_oneResult_divFactor']     = explode(',', $config['filter_oneResult_divFactor']);
-        $config['domain_nbValues']                = explode(',', $config['domain_nbValues']);
-        $config['result_max']                     = explode(',', $config['result_max']);
         $config['domain_order_rand']              = (bool) $config['domain_order_rand'];
         $config['time_max']                       = (int) $config['time_max'];
         return $config;

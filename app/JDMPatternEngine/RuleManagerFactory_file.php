@@ -7,11 +7,19 @@ use App\JDMPatternEngine\Atom;
 use App\RelationType;
 use \Exception;
 
+/**
+ * Charge les règles depuis des données textes
+ */
 class RuleManagerFactory_file
 {
     private $data;
     private $relations;
 
+    /**
+     * 
+     * @param string|array $data Les données à charger
+     * @param RelationType $relations
+     */
     public function __construct($data, RelationType $relations = null)
     {
         if (is_string($data))

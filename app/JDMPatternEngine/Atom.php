@@ -2,18 +2,21 @@
 
 namespace App\JDMPatternEngine;
 
+/**
+ * Un atome dans un terme
+ */
 class Atom
 {
     private $name;
     private $value = null;
 
-    public function __construct( $name = null, $value = null )
+    public function __construct($name = null, $value = null)
     {
         $this->name = $name;
-        $this->setValue( $value );
+        $this->setValue($value);
     }
 
-    public function setValue( $val )
+    public function setValue($val)
     {
         $this->value = $val;
     }
@@ -38,12 +41,12 @@ class Atom
         return $this->value;
     }
 
-    static public function sameName( Atom $a, Atom $b )
+    static public function sameName(Atom $a, Atom $b)
     {
         return $a->getName() == $b->getName();
     }
 
-    static public function sameValue( Atom $a, Atom $b )
+    static public function sameValue(Atom $a, Atom $b)
     {
         return $a->getValue() == $b->getValue();
     }

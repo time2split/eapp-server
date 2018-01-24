@@ -15,6 +15,9 @@ use App\Word;
 
 class Infos extends FCInfos
 {
+    /**
+     * Configuration par défaut
+     */
     const CONFIG_DEF = [
         'time_max'                       => 40,
         'domain_order_rand'              => false,
@@ -27,6 +30,9 @@ class Infos extends FCInfos
         'result_max_def'                 => 1,
     ];
 
+    /*
+     * Informations internes
+     */
     private $startTime;
     private $db;
     private $Relation;
@@ -49,6 +55,10 @@ class Infos extends FCInfos
         $this->startTime = time();
         $this->config    = array_merge(self::CONFIG_DEF, (array) $config);
 
+        /*
+         * On créer pour chaque clé de configuration une variable $conf_#clé.
+         * C'est plus simple et rapide pour accéder à la valeur dans la classe.
+         */
         foreach ($this->config as $k => &$v) {
             $this->{'conf_' . $k} = & $v;
         }
@@ -98,6 +108,14 @@ class Infos extends FCInfos
         return true;
     }
 
+    /**
+     * Interne : utile pour filterDomain()
+     * Filtre par rapport aux mots exclus.
+     * 
+     * @param type $term Le terme à filtrer
+     * @param type $excludeWords Les mots exclus
+     * @return boolean
+     */
     private function filterTerm($term, /* $minWeight = null, */ $excludeWords = null)
     {
         $atoms = $term->getAtoms();
@@ -125,6 +143,9 @@ class Infos extends FCInfos
         });
     }
 
+    /**
+     * Transforme un tableau de domaines en tableaux de valeurs (id des mots)
+     */
     private function getValuesOfDomain($domain)
     {
         return array_map(function($e) {
@@ -151,12 +172,13 @@ class Infos extends FCInfos
             foreach ($domain as $dom) {
                 $tmp[] = $this->getValuesOfDomain($dom['domain']);
             }
-            
+
             if (count($tmp) > 1)
-                $tmp    = array_intersect(...$tmp);
-            
+                $tmp = array_intersect(...$tmp);
+
             $domain = array_intersect_key($domain[0]['domain'], $tmp);
         }
+        //Sinon merge
         else {
             $domain = array_merge(...array_column($domain, 'domain'));
         }
@@ -179,6 +201,10 @@ class Infos extends FCInfos
         $negative = array_filter($domain, function($e) {
             return $e[0]->getWeight() < 0;
         });
+
+        /*
+         * Calcul des cardinalités pour pos et neg
+         */
         $cpos = count($positive);
         $cneg = count($negative);
         $mid  = floor($nbVal / 2.0);
@@ -228,9 +254,13 @@ class Infos extends FCInfos
     }
 
     /**
+     * (interne)
      * Retourne les relations depuis mongodb
-     * @param type $demand
-     * @return type
+     * Les relations déjà demandés sont mise en cache le temps de la session de calcul,
+     * On soulage ainsi le SGDB
+     * 
+     * @param array|Term $demand
+     * @return iterable Les relations trouvées
      * @throws Exception
      */
     private function moreRelationsAskFor($demand)
@@ -272,6 +302,9 @@ class Infos extends FCInfos
         }
     }
 
+    /**
+     * Transforme un ensemble de lignes mongoDB en objets de type Term
+     */
     private function relations2Terms($relations)
     {
         $terms = [];
@@ -282,6 +315,12 @@ class Infos extends FCInfos
         return $terms;
     }
 
+    /**
+     * Demande les relations matchant $on dans mongodb ou dan le cache interne
+     * 
+     * @param type $on
+     * @return boolean|null
+     */
     public function moreData($on)
     {
         if ($this->depth > $this->conf_depth_max) {
@@ -295,16 +334,16 @@ class Infos extends FCInfos
         }
         elseif ($on instanceof Term) {
             $relations = $this->moreRelationsAskFor($on);
-            
-            if(empty($relations))
+
+            if (empty($relations))
                 return null;
-            
-            $terms     = $this->relations2Terms($relations);
+
+            $terms = $this->relations2Terms($relations);
             $this->db->addTerm(...$terms);
             return true;
         }
         elseif ($on instanceof Rule) {
-            //Seules les hypothèses nous intéresse : la conclusion doit être bindée
+            //Seules les hypothèses nous intéressent : la conclusion doit être bindée
             $this->moreData($on->getHypotheses());
         }
         return null;

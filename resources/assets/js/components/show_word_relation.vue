@@ -1,23 +1,23 @@
 <template>
-    <section v-if="showSection" class="show-relation">
-        <h1><a href="#" @click="changeRelation(rdata.name)" @click.prevent="onEventPrevent">{{ relationName }}</a></h1>
-
+    <section class="show-relation">
+        <h1>
+            <span v-html="relationName"></span>
+            (<show-count :nb="relation.ALL.nb" :count="relation.ALL.count"></show-count>)
+        </h1>
         <div v-for="type in showType">
-            <div v-if="relations[type].data.length">
-                <h2>{{ infoType[type].label }} : <show-count :nb="relations[type].nb" :count="relations[type].count"></show-count></h2>
-                <ul class="list-inline">
-                    <li class="list-inline-item" v-for="rel in relations[type].data">
-                    <a-word @changeWord="changeWord" :relation="rel" :words="words" :show="infoType[type].a_word_show" ></a-word>
-                    </li>
-                </ul>
-            </div>
+            <h2>{{ infoType[type].label }} : <show-count v-bind:nb="relation[type].nb" v-bind:count="relation[type].count"></show-count></h2>
+            <ul class="list-inline">
+                <li class="list-inline-item" v-for="rel in relation[type].data">
+                    <a-word @changeWord="changeWord" v-bind:relation="rel" v-bind:words="words" v-bind:show="infoType[type].a_word_show" ></a-word>
+                </li>
+            </ul>
         </div>
     </section>
 </template>
 <script>
     import { HUB } from '../vue/data.js';
     export default{
-        props: ['rdata', 'relations', 'words', 'word', 'showType'],
+        props: ['relation', 'words', 'word', 'showType'],
         data()
         {
             return {
@@ -37,22 +37,13 @@
         computed: {
             relationName()
             {
-                return this.rdata.nom_etendu === '' ? this.rdata.name : this.rdata.nom_etendu;
-            },
-            isEmpty()
-            {
-                for (var type of this.showType) {
+                var rel = this.relation.infos;
+                
+                if (rel.nom_etendu)
+                    return rel.nom_etendu + ' <small>' + rel.name + '</small>';
 
-                    if (this.relations[type].data.length != 0)
-                        return false;
-                }
-                return true;
+                return rel.name;
             },
-            showSection()
-            {
-                return (this.isEmpty && this.userConfig.show.empty === true)
-                        || (!this.isEmpty && this.userConfig.show.noempty === true);
-            }
         },
         components: {
             'a-word': require('./a_word.vue'),
@@ -60,11 +51,6 @@
         },
         methods: {
             onEventPrevent: HUB.onEventPrevent,
-            changeRelation(relation)
-            {
-                this.$emit('changeRelation', relation);
-//                HUB.$data.shared.app = Object.assign({}, HUB.$data.shared.app, {data: {word: HUB.$data.shared.app.data.word, relation: relation}})
-            },
             changeWord(word)
             {
                 this.$emit('changeWord', word);

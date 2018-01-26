@@ -20,20 +20,6 @@
                     Afficher les poids
                 </label>
             </div>
-            <span  v-if="relation === null">
-                <div class="form-check">
-                    <label class="form-check-label">
-                        <input class="form-check-input" type="checkbox" v-model="userConfig.show.empty">
-                        Afficher les relations vide
-                    </label>
-                </div>
-                <div class="form-check">
-                    <label class="form-check-label">
-                        <input class="form-check-input" type="checkbox" v-model="userConfig.show.noempty">
-                        Afficher les relations pleines
-                    </label>
-                </div>
-            </span>
         </fieldset>
     </form>
 </div>
@@ -41,7 +27,6 @@
 <script>
     import { HUB } from '../vue/data.js';
     export default {
-        props: ['relation'],
         data()
         {
             return {userConfig: HUB.shared.userConfig};

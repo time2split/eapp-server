@@ -6,6 +6,7 @@ use App\Word as DBWord;
 use App\Relation as DBRelation;
 use App\RelationType as DBRelationType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class Word extends Controller
 {
@@ -70,28 +71,50 @@ class Word extends Controller
 
     private function getChildsOrParents(string $what, string $word, Request $request)
     {
-        $w        = $this->getWord($word);
-        $rel      = $request->query('rtid', null);
-        $per_page = $request->query('per_page', $this->relPagination);
-        $count    = $request->query('count', null);
+        $ret       = [];
+        $relations = explode(',', $request->query('rtid', null));
 
-        if ($count === null)
-            $count = false;
-        else
-            $count = $count !== 'false';
+        foreach ($relations as $rel) {
+            $w        = $this->getWord($word);
+            $per_page = $request->query('per_page', $this->relPagination);
+            $count    = $request->query('count', null);
 
-        if (empty($w))
-            return [];
+            if ($count === null)
+                $count = false;
+            else
+                $count = $count !== 'false';
 
-        $relations = $this->dbRelation->where($what, $w->_id);
+            if (empty($w))
+                return [];
 
-        if ($rel !== null)
-            $relations->where('t', (int) $rel);
+//            if ($count) {
+//                
+//                if (Cache::has('JDM:Infos:count')) {
+//                    $ret = Cache::get('JDM:Infos:count');
+//                    return array_intersect_key($ret, array_flip($relations));
+//                }
+//                else {
+//                    $tmp                = $dbWord->select('_id')->where('n', 'like', "_%")->get();
+//                    $this->excludeWords = array_column($tmp->toArray(), '_id');
+//                    Cache::set('JDM:Infos:excluded', $this->excludeWords, 10);
+//                }
+//            }
 
-        if ($count)
-            return $relations->count();
-        else
-            return $relations->simplePaginate((int) $per_page);
+            $qrelations = $this->dbRelation->where($what, $w->_id);
+
+            if ($rel !== null)
+                $qrelations->where('t', (int) $rel);
+
+            if ($count)
+                $ret[$rel] = $qrelations->count();
+            else
+                $ret[$rel] = $qrelations->simplePaginate((int) $per_page);
+        }
+
+        if (count($relations) === 1)
+            $ret = $ret[$rel];
+
+        return $ret;
     }
 
     public function getChilds(string $word, Request $request)

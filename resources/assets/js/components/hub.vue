@@ -16,9 +16,9 @@
         },
         config: {
             show_word: {
-                per_page: 200,
-                max_page: 10,
-                min_page_for_counts: 5
+                per_page: 500,
+//                max_page: 10,
+//                min_page_for_counts: 10
             },
             get_words: {
                 nb: 1000
@@ -40,6 +40,7 @@
         data()
         {
             return {
+                wordTime: 0, //Intervalle (ms) entre les demande des mots
                 wordQ: [],
                 default: null,
                 shared: shared,
@@ -53,7 +54,7 @@
         created: function ()
         {
             window.onpopstate = this.popstate;
-            this.$watch('wordQ', this.getAWord);
+//            this.$watch('wordQ', this.getAWord);
             shared.htmlTitle = $('title').text();
 
             var url = this.urlMakeCurent();
@@ -136,55 +137,31 @@
                 axios.get(page, {cancelToken: token.token}).then(callThen).catch(callCatch);
                 return token;
             },
-            //==================================================================
 
-//            changeRelation(relation)
-//            {
-//                if (shared.relation == relation)
-//                    return;
-//                shared.app = {
-//                    direction: '@app:site',
-//                    action: 'show-word',
-//                    data: {
-//                        word: shared.word,
-//                        relation: relation,
-//                    },
-//                }
-//            },
-//            changeWord(word)
-//            {
-////                console.log("changeWord()");
-//
-//                if (shared.word == word)
-//                    return false;
-////                console.log("changeWord(" + word + ")");
-//                shared.word = word;
-//                shared.app = {
-//                    direction: '@app:site',
-//                    action: 'show-word',
-//                    data: {
-//                        word: word,
-//                        relation: null,
-//                    },
-//                    isNew: true
-//                };
-//                return true;
-//            },
             //==================================================================
             // CHARGEMENT DES MOTS
             //==================================================================
 
             askForWord(wid)
             {
-                if (!shared.words[wid] && this.wordQ.indexOf(wid) == -1)
+                if (!shared.words[wid] && this.wordQ.indexOf(wid) == -1) {
                     this.wordQ.push(wid);
+                    this.getAWord();
+                }
             },
             getAWord()
             {
+//                if (this.wordTime === null) {
+//                    this.wordTime = Date.now();
+//                    setTimeout(this.getAWord, 100);
+//                }
+
                 if (this.wordComputed)
                     return;
+
                 this.wordComputed = true;
-                this.fillWords();
+                setTimeout(this.fillWords, this.wordTime);
+//                this.fillWords();
             },
             getWord(wid)
             {
@@ -199,10 +176,11 @@
                 var nb = shared.config.get_words.nb;
                 var wids = [];
 
-                for (var i = 0; i < nb && this.wordQ.length; i++) {
+                for (var i = 0; i < nb && i < this.wordQ.length; i++) {
                     wids.push(this.wordQ.pop());
                 }
                 var url = '/@get/words?words=' + wids.join(',');
+
                 this.addHttpRequest(url, (response) => {
                     var words = response.data;
 
@@ -213,8 +191,10 @@
 
                     if (this.wordQ.length == 0)
                         this.wordComputed = false;
-                    else
-                        this.fillWords();
+                    else {
+//                        this.fillWords();
+                        setTimeout(this.fillWords, this.wordTime);
+                    }
                 });
             },
         }

@@ -1,3 +1,4 @@
+#Commentaire
 r_isa(a,b)      r_has_part(b,c) -> r_has_part(a,c)
 r_has_part(a,b) r_isa(b,c)      -> r_has_part(a,c)
 

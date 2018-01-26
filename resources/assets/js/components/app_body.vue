@@ -7,9 +7,6 @@
                     <li>
                         <a class="nav-link" href="#" @click="loadComponent('show-welcome')" @click.prevent="onEventPrevent">Accueil</a>
                     </li>
-                    <li v-if="word" class="nav-item">
-                        <a class="nav-link" href="#" @click="changeWord(word)" @click.prevent="onEventPrevent">"{{ word }}"</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#" @click="loadComponent('show-relations')" @click.prevent="onEventPrevent">Relations</a>
                     </li>
@@ -31,7 +28,7 @@
             <!--</div>-->
         </nav>
         <div v-if="shared.relationTypes">
-            <component v-bind:is="component" :config="shared.config" :userConfig="shared.userConfig" :showRelations="showRelations" :relationTypes="shared.relationTypes" :wordsData="shared.wordsData" :words="shared.words" @changeWord="changeWord" @changeRelation="changeRelation"></component>
+            <component v-bind:is="component" :config="shared.config" :userConfig="shared.userConfig" :showRelations="showRelations" :relationTypes="shared.relationTypes" :relationsData="relationsData" :wordsData="shared.wordsData" :words="shared.words" @changeWord="changeWord" @changeRelation="changeRelation"></component>
         </div>
     </div>
 </template>
@@ -71,6 +68,15 @@
 
                     if (ids.indexOf(rel._id) == -1)
                         ret.push(rel);
+                }
+                return ret;
+            },
+            relationsData()
+            {
+                var ret = {};
+
+                for (var r of this.showRelations) {
+                    ret[r._id] = r;
                 }
                 return ret;
             }
@@ -191,9 +197,6 @@
                 var error;
                 var app = this.shared.app;
 
-                this.relation = app.data.relation ? app.data.relation : null;
-                this.word = app.data.word ? app.data.word : null;
-
                 /*
                  * Retour arrière hors session
                  */
@@ -209,6 +212,8 @@
                 else {
                     error = true;
                 }
+                this.relation = app.data.relation ? app.data.relation : null;
+                this.word = app.data.word ? app.data.word : null;
 
                 if (error) {
                     this.component = 'show-welcome';

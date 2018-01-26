@@ -18,11 +18,23 @@
                         <span v-else>
                             {{ relation.name }}
                         </span>
+
                         <span v-if="relationsInfos[relation._id].ALL.count === null" class="label label-info pull-right">
                             ?
                         </span>
-                        <span v-else-if="relationsInfos[relation._id].ALL.count >= 0" class="label label-success pull-right">
-                            <show-count v-bind:count="relationsInfos[relation._id].ALL.count"></show-count>
+                        <span v-else-if="relationsInfos[relation._id].ALL.count >= 0" class="pull-right">
+
+                            <span v-if="relationsInfos[relation._id].IN.count" class="label label-info">
+                                {{ relationsInfos[relation._id].IN.count }}
+                            </span>
+
+                            <span class="label label-success">
+                                <show-count v-bind:count="relationsInfos[relation._id].ALL.count"></show-count>
+                            </span>
+                            
+                            <span v-if="relationsInfos[relation._id].OUT.count" class="label label-info">
+                                {{ relationsInfos[relation._id].OUT.count }}
+                            </span>
                         </span>
                         <span v-else class="label label-warning pull-right">
                             <show-count v-bind:count="relationsInfos[relation._id].ALL.nb"></show-count>
@@ -67,7 +79,6 @@
 
                 for (var rel of this.showRelations) {
                     var relinfos = this.relationsInfos[rel._id];
-                    
                     if (relinfos.ALL.count === null || relinfos.ALL.count > 0)
                         this.selectedRelations[rel._id] = rel;
                 }

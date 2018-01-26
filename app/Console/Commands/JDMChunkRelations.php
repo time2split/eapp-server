@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class JDMDumpCommand extends Command
+class JDMChunkRelations extends Command
 {
     /**
      * The name and signature of the console command.

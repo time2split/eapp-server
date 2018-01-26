@@ -15,6 +15,8 @@ class Word extends Controller
     private $dbRelationType;
     private $relPagination;
 
+    const CACHE_TIME_MIN = 60;
+
     public function __construct(DBWord $dbWord, DBRelation $dbRelation, DBRelationType $dbRelationType)
     {
         $this->dbWord         = $dbWord;
@@ -71,34 +73,40 @@ class Word extends Controller
 
     private function getChildsOrParents(string $what, string $word, Request $request)
     {
-        $ret       = [];
-        $relations = explode(',', $request->query('rtid', null));
+        $ret          = [];
+        $cacheData    = null;
+        $cacheUpdated = false;
+        $relations    = explode(',', $request->query('rtid', null));
+        $per_page     = $request->query('per_page', $this->relPagination);
+        $count        = $request->query('count', null);
+        $cacheKey     = null;
+        $w            = $this->getWord($word);
+
+        if (empty($w))
+            return [];
+
+        if ($count === null)
+            $count = false;
+        else
+            $count = $count !== 'false';
+
+        if ($count) {
+            $cacheKey = "JDM:word:$word:count:$what";
+
+            if (Cache::has($cacheKey)) {
+                $cacheData = Cache::get($cacheKey, []);
+            }
+        }
 
         foreach ($relations as $rel) {
-            $w        = $this->getWord($word);
-            $per_page = $request->query('per_page', $this->relPagination);
-            $count    = $request->query('count', null);
 
-            if ($count === null)
-                $count = false;
-            else
-                $count = $count !== 'false';
+            if (isset($cacheData[$rel])) {
+                $ret[$rel] = $cacheData[$rel];
+                continue;
+            }
 
-            if (empty($w))
-                return [];
-
-//            if ($count) {
-//                
-//                if (Cache::has('JDM:Infos:count')) {
-//                    $ret = Cache::get('JDM:Infos:count');
-//                    return array_intersect_key($ret, array_flip($relations));
-//                }
-//                else {
-//                    $tmp                = $dbWord->select('_id')->where('n', 'like', "_%")->get();
-//                    $this->excludeWords = array_column($tmp->toArray(), '_id');
-//                    Cache::set('JDM:Infos:excluded', $this->excludeWords, 10);
-//                }
-//            }
+            if ($cacheKey !== null)
+                $cacheUpdated = true;
 
             $qrelations = $this->dbRelation->where($what, $w->_id);
 
@@ -113,6 +121,9 @@ class Word extends Controller
 
         if (count($relations) === 1)
             $ret = $ret[$rel];
+
+        if ($cacheUpdated)
+            Cache::put($cacheKey, $ret, self::CACHE_TIME_MIN);
 
         return $ret;
     }

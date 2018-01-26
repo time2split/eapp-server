@@ -379,8 +379,8 @@
                 });
                 this.cancelToken.word = tok;
 
-//                this.fillCounts_options = {relations: this.showRelations};
-//                this.canComputeCountRelations();
+                this.fillCounts_options = {relations: this.showRelations};
+                this.canComputeCountRelations();
             }
         }
     };

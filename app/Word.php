@@ -16,7 +16,6 @@ class Word extends \Moloquent
 //        if (!isset($this->nf))
 //            $this->nf = $this->n;
 //    }
-    
 //    static function makes($data)
 //    {
 //        if(data instanceof self)
@@ -26,9 +25,29 @@ class Word extends \Moloquent
 //        }
 //    }
 
+    public function makeIt()
+    {
+        if (!isset($this->nf))
+            $this->nf = $this->n;
+    }
+
     function getWord($word)
     {
-        $k = is_numeric($word) ? '_id' : 'n';
-        return $this->where($k, $word)->get()->first();
+        if (is_numeric($word))
+            $w = $this->find((int) $word);
+        elseif (preg_match('#^::>(.+)>(.+)$#', $word, $matches)) {
+            $w = $this->where('n', $word)->first();
+        }
+        elseif (preg_match('#^(.+)>(.+)$#', $word, $matches) && !ctype_digit($matches[2])) {
+            $raff = $this->getWord($matches[2]);
+            return $this->getWord($matches[1] . '>' . $raff->_id);
+        }
+        else
+            $w = $this->where('n', $word)->first();
+
+        $this->makeIt();
+        return $w;
+//        $k = is_numeric($word) ? '_id' : 'n';
+//        return $this->where($k, $word)->get()->first();
     }
 }

@@ -25,27 +25,25 @@ class Word extends Controller
         $this->relPagination  = config('app.pagination.relations', config('app.pagination.default', 20));
     }
 
-    public function app(string $word = null, string $relation = null)
-    {
-        if (is_numeric($word)) {
-            $w    = $this->dbWord->find((int) $word);
-            $word = $w->n;
-        }
-        return view('welcome', ['word' => $word, 'word_relation' => $relation, 'app' => null]);
-    }
+//    public function app(string $word = null, string $relation = null)
+//    {
+//        if (is_numeric($word)) {
+//            $w    = $this->dbWord->find((int) $word);
+//            $word = $w->n;
+//        }
+//        return view('welcome', ['word' => $word, 'word_relation' => $relation, 'app' => null]);
+//    }
 
     private function getWord(string $word)
     {
-        if (is_numeric($word))
-            $w = $this->dbWord->find((int) $word);
-        else
-            $w = $this->dbWord->where('n', $word)->first();
-        return $w;
+        $word = urldecode($word);
+        return $this->dbWord->getWord($word);
     }
 
     public function get(string $word)
     {
-        $w = $this->getWord($word);
+        $word = urldecode($word);
+        $w    = $this->getWord($word);
 
         if (empty($w))
             return [];
@@ -73,6 +71,7 @@ class Word extends Controller
 
     private function getChildsOrParents(string $what, string $word, Request $request)
     {
+        $word         = urldecode($word);
         $ret          = [];
         $cacheData    = null;
         $cacheUpdated = false;
@@ -115,8 +114,9 @@ class Word extends Controller
 
             if ($count)
                 $ret[$rel] = $qrelations->count();
-            else
+            else {
                 $ret[$rel] = $qrelations->simplePaginate((int) $per_page);
+            }
         }
 
         if (count($relations) === 1)
@@ -141,7 +141,8 @@ class Word extends Controller
     public function rel_autocomplete(string $word)
     {
         $words = $this->dbRelationType->where('name', 'like', "$word%")->orderBy('name', 'desc')->orderBy('_id');
-        return $words->get();
+        $ret   = $words->get();
+        return $ret;
     }
 
     public function autocomplete(Request $request, string $relation)
@@ -159,7 +160,12 @@ class Word extends Controller
         if (($order = $request->query('order', 'nf'))) {
             $words = $words->orderBy($order);
         }
-        return $words->get();
+        $ret = $words->get();
+
+        foreach ($ret as &$w)
+            $w->makeIt();
+
+        return $ret;
     }
 
     public function relationTypes(Request $request)

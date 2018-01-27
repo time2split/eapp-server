@@ -43,9 +43,9 @@
                         <div class="form-group col-sm-6">
                             <label>Facteur de division <input class="form-control input-sm" type="text" v-model="config.filter_oneResult_divFactor" /></label>
                             <small class="form-text text-muted row">
-                                Defini un poids minimal pour qu'un résultat soit accepté.
+                                Definit un poids minimal pour qu'un résultat soit accepté.
                                 Le poids de la conclusion est divisé par cette valeur et forme une borne inférieure.
-                                Les poids des hypothèses doivent être supérieur à cette borne pour que le résultats soit acceptés.
+                                Les poids des hypothèses doivent être supérieurs à cette borne pour que le résultat soit accepté.
                             </small>
 
                         </div>
@@ -91,7 +91,7 @@
                     'depth_max': 1,
                     'filter_oneResult_divFactor': [2, 3],
                     'domain_nbValues': [40, 20, 10],
-                    'result_max': [10, 20],
+                    'result_max': [5, 2],
                 },
                 httpToken: null
             };

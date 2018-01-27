@@ -2,7 +2,7 @@
     <section class="container-fluid">
         <div v-if="word" class="panel panel-default">
             <div class="panel-heading">
-                <h1>{{ word }}</h1>
+                <h1 v-if="wdata">{{ wdata.nf }}</h1>
             </div>
 
             <div class="panel-body">
@@ -176,15 +176,16 @@
                 for (var relid in relations) {
                     tmprels.push(relations[relid]._id);
                 }
+                var urlword = encodeURIComponent(this.word);
 
                 let optionso = {
-                    url: "/@word/" + this.word + "/childs?rtid=",
+                    url: "/@word/" + urlword + "/childs?rtid=",
                     type_rel: 'OUT',
                     max_page: true,
                     rel_ids: tmprels
                 };
                 let optionsi = {
-                    url: "/@word/" + this.word + "/parents?rtid=",
+                    url: "/@word/" + urlword + "/parents?rtid=",
                     type_rel: 'IN',
                     max_page: true,
                     rel_ids: tmprels
@@ -278,7 +279,8 @@
                 var max_page = options.max_page ? options.max_page : this.config.show_word.max_page;
                 var type_rel = options.type_rel ? options.type_rel : 'OUT';
                 var rel_ids = options.rel_ids;
-                var url = options.url ? options.url : '/@word/' + this.word + '/childs?';
+                var urlword = encodeURIComponent(this.word);
+                var url = options.url ? options.url : '/@word/' + urlword + '/childs?';
 
                 for (var rel_id of rel_ids) {
                     var ret = this.relations[rel_id][type_rel];
@@ -287,47 +289,49 @@
                     if (ret.computed === false) {
                         ret.computed = null; // calcul en cours
                     }
-                    else if (ret.computed) {
+                    else if (ret.computed || ret.computed === null) {
                         continue;
                     }
-                    var tmpurl = url + rel_id + '&per_page=' + per_page + '&page=' + ret.page;
-
-                    var closure = function (ret, self)
-                    {
-                        var token = HUB.addHttpRequest(tmpurl, (response) => {
-                            var isEnd = true;
-                            var rels = response.data.data;
-
-                            if (rels.length === 0) {
-                                rels = null;
-                            }
-                            else {
-                                ret.page++;
-
-                                if (max_page === true || ret.page < max_page) {
-
-                                    if (rels.length === per_page) {
-                                        isEnd = false;
-                                        self.fillRelations(options);
-                                    }
-                                }
-                                ret.nb += rels.length;
-                                ret.data = ret.data.concat(rels);
-                                self.sortRelations([type_rel]);
-                            }
-
-                            if (isEnd) {
-                                ret.computed = true;
-
-                                if (ret.count === null) {
-                                    ret.count = ret.nb;
-                                }
-                            }
-                        });
-                        self.cancelToken.words.push(token);
-                    };
-                    closure(ret, this);
+                    var tmpurl = url + rel_id + '&per_page=' + per_page + '&page=';
+                    this._fillRelations(tmpurl, ret, type_rel, per_page);
             }
+            },
+            _fillRelations(baseurl, ret, type_rel, per_page)
+            {
+                var url = baseurl + ret.page;
+
+                var token = HUB.addHttpRequest(url, (response) => {
+                    var isEnd = true;
+                    var rels = response.data.data;
+
+                    if (rels.length === 0) {
+                        rels = null;
+                    }
+                    else {
+                        ret.page++;
+
+//                        if (max_page === true || ret.page < max_page)
+                        {
+
+                            if (rels.length === per_page) {
+                                isEnd = false;
+                                this._fillRelations(baseurl, ret, type_rel, per_page);
+                            }
+                        }
+                        ret.nb += rels.length;
+                        ret.data = ret.data.concat(rels);
+                        this.sortRelations([type_rel]);
+                    }
+
+                    if (isEnd) {
+                        ret.computed = true;
+
+                        if (ret.count === null) {
+                            ret.count = ret.nb;
+                        }
+                    }
+                });
+                this.cancelToken.words.push(token);
             },
             fillCountRelations(options =
             {}){
@@ -339,12 +343,13 @@
                     urlargs.push(rel._id);
                 }
                 urlargs = urlargs.join(',');
-
-                var tok1 = HUB.addHttpRequest('/@word/' + this.word + '/childs?count=true&rtid=' + urlargs, (response) => {
+                var urlword = encodeURIComponent(this.word);
+                
+                var tok1 = HUB.addHttpRequest('/@word/' + urlword + '/childs?count=true&rtid=' + urlargs, (response) => {
                     for (var relid in response.data)
                         this.relations[relid].OUT.count = response.data[relid];
                 });
-                var tok2 = HUB.addHttpRequest('/@word/' + this.word + '/parents?count=true&rtid=' + urlargs, (response) => {
+                var tok2 = HUB.addHttpRequest('/@word/' + urlword + '/parents?count=true&rtid=' + urlargs, (response) => {
                     for (var relid in response.data)
                         this.relations[relid].IN.count = response.data[relid];
                 });
@@ -353,6 +358,7 @@
             },
             changeTheWord()
             {
+                this.selectedRelations = null;
                 this.initRelations();
                 this.changeRelationType('INFOS');
 
@@ -374,7 +380,7 @@
 
                 this.cancelTokenWord();
 
-                var tok = HUB.addHttpRequest('/@word/' + this.word, (response) => {
+                var tok = HUB.addHttpRequest('/@word/' + encodeURIComponent(this.word), (response) => {
                     this.wdata = response.data.word;
                 });
                 this.cancelToken.word = tok;

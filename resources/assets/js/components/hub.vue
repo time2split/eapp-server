@@ -16,7 +16,7 @@
         },
         config: {
             show_word: {
-                per_page: 500,
+                per_page: 500, //Page lors d'un chargement ajax
 //                max_page: 10,
 //                min_page_for_counts: 10
             },
@@ -32,7 +32,8 @@
             show: {
                 weight: true,
                 empty: false,
-                noempty: true
+                noempty: true,
+                wordPerPage: 500 //Page dans l'affichage
             }
         }
     };

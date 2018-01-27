@@ -27,7 +27,7 @@
                 var form = $(this.$el);
                 var input = form.find("input");
                 var default_config = {
-                    getValue: 'n',
+                    getValue: 'nf',
                     requestDelay: 300,
                     url: function (word) {
                         return component.url.replace('$', word);

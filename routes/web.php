@@ -24,4 +24,4 @@ Route::get( '@get/words', 'Word@getWords' );
 Route::get( '@jdmpattern/{worda}/{relation}/{wordb}', 'JDMPatternEngine' );
 
 Route::get( '/@app:{direction}/{service}/{args?}', 'Service@app' )->where('args','.+');
-Route::get( '/{word?}/{relation?}', 'Word@app' );
+//Route::get( '/{word?}/{relation?}', 'Word@app' );

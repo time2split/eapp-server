@@ -2,7 +2,7 @@
     <div class="right col-sm-3 col-sm-push-9">
         <nav id="menu-relations">
             <a href="#" @click="selectAll" @click.prevent="onEventPrevent">Tout selectionner</a><br />
-            <small>click+Ctrl pour sélection multiple</small>
+            <small>Ctrl+click pour sélection multiple</small>
 
             <form class="form-inline">
                 <label class="form-check-label"><input class="form-check-input" type="checkbox" v-model="config.showEmpty" /> Afficher si vide</label>
@@ -31,7 +31,7 @@
                             <span class="label label-success">
                                 <show-count v-bind:count="relationsInfos[relation._id].ALL.count"></show-count>
                             </span>
-                            
+
                             <span v-if="relationsInfos[relation._id].OUT.count" class="label label-info">
                                 {{ relationsInfos[relation._id].OUT.count }}
                             </span>
@@ -61,8 +61,16 @@
                 selectedRelations: {}
             };
         },
+        created()
+        {
+            HUB.$watch('shared.app', this.HUBOnSharedApp);
+        },
         methods: {
             onEventPrevent: HUB.onEventPrevent,
+            HUBOnSharedApp()
+            {
+                this.selectedRelations = {};
+            },
             changeRelation(event, relation)
             {
                 this.selectedRelations = {};

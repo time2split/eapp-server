@@ -9,22 +9,6 @@ class Word extends \Moloquent
     protected $primaryKey = '_id';
     public $timestamps    = false;
 
-//    public function __construct($attrs = [])
-//    {
-//        parent::__construct($attrs);
-//        
-//        if (!isset($this->nf))
-//            $this->nf = $this->n;
-//    }
-//    static function makes($data)
-//    {
-//        if(data instanceof self)
-//        {
-//            if (!isset($this->nf))
-//                $this->nf = $this->n;
-//        }
-//    }
-
     public function makeIt()
     {
         if (!isset($this->nf))
@@ -47,7 +31,5 @@ class Word extends \Moloquent
 
         $this->makeIt();
         return $w;
-//        $k = is_numeric($word) ? '_id' : 'n';
-//        return $this->where($k, $word)->get()->first();
     }
 }

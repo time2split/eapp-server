@@ -25,15 +25,6 @@ class Word extends Controller
         $this->relPagination  = config('app.pagination.relations', config('app.pagination.default', 20));
     }
 
-//    public function app(string $word = null, string $relation = null)
-//    {
-//        if (is_numeric($word)) {
-//            $w    = $this->dbWord->find((int) $word);
-//            $word = $w->n;
-//        }
-//        return view('welcome', ['word' => $word, 'word_relation' => $relation, 'app' => null]);
-//    }
-
     private function getWord(string $word)
     {
         $word = urldecode($word);

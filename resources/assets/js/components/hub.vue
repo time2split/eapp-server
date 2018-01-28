@@ -1,12 +1,12 @@
 <script>
     const shared = {
-//        word: null, // Le mot en cours (chaine)
-//        relation: null, //La relation en cours
         words: {}, //Des mots à rechercher si besoin
         relationTypes: null, //Les types de relations (toute la base de données)
-//        component: "show-welcome", //Le composant principal utilisé
         htmlTitle: null,
         wordsData: {}, //Infos à stocker sur un mot (relations ...)
+        /*
+         * Page actuelle
+         */
         app: {
             direction: null,
             action: null,

@@ -11,7 +11,6 @@
     </head>
     <body>
         <div id="app">
-            <!--<my-app urlword="{{ $word }}" urlwordrelation="{{ $word_relation }}" papp="{{ $app }}"></my-app>-->
             <my-app></my-app>
         </div>
         <script src="{{ asset('js/app.js') }}" ></script>
